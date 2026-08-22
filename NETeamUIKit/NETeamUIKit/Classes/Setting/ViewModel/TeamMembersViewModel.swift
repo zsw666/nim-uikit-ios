@@ -4,7 +4,6 @@
 
 import NEChatKit
 import NEChatUIKit
-import NECoreIM2Kit
 import NIMSDK
 import UIKit
 
@@ -310,7 +309,7 @@ class TeamMembersViewModel: NSObject, NETeamListener, NETeamChatUserCacheListene
         }
 
         if let event = NESubscribeManager.shared.getSubscribeStatus(accountId) {
-          onLineEventDic[accountId] = event.statusType == .USER_STATUS_TYPE_LOGIN
+          onLineEventDic[accountId] = NESubscribeManager.isOnline(event)
         } else {
           accounts.append(accountId)
         }
@@ -339,7 +338,7 @@ class TeamMembersViewModel: NSObject, NETeamListener, NETeamChatUserCacheListene
   func onUserStatusChanged(_ data: [V2NIMUserStatus]) {
     NEALog.infoLog(className(), desc: #function + " event count : \(data.count)")
     for d in data {
-      onLineEventDic[d.accountId] = d.statusType == .USER_STATUS_TYPE_LOGIN
+      onLineEventDic[d.accountId] = NESubscribeManager.isOnline(d)
     }
     delegate?.didNeedRefreshUI()
   }

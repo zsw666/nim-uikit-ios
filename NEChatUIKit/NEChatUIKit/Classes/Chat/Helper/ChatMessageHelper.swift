@@ -6,9 +6,6 @@
 import CommonCrypto
 import Foundation
 import NEChatKit
-import NECommonKit
-import NECoreIM2Kit
-import NECoreKit
 import NIMSDK
 
 @objcMembers
@@ -53,6 +50,7 @@ public class ChatMessageHelper: NSObject {
   ///   - conversationId: 会话 id
   ///   - showAlias: 是否优先显示备注
   /// - Returns: 会话昵称
+  @nonobjc
   public static func getSessionName(conversationId: String, showAlias: Bool = true) -> String {
     guard let sessionId = V2NIMConversationIdUtil.conversationTargetId(conversationId) else {
       return ""
@@ -70,6 +68,7 @@ public class ChatMessageHelper: NSObject {
   /// 获取消息列表单元格注册列表
   /// - Parameter isFun: 是否是娱乐皮肤
   /// - Returns: 单元格注册列表
+  @nonobjc
   public static func getChatCellRegisterDic(isFun: Bool) -> [String: UITableViewCell.Type] {
     [
       "\(MessageType.text.rawValue)":
@@ -102,6 +101,7 @@ public class ChatMessageHelper: NSObject {
   /// 获取标记列表单元格注册列表
   /// - Parameter isFun: 是否是娱乐皮肤
   /// - Returns: 单元格注册列表
+  @nonobjc
   public static func getPinCellRegisterDic(isFun: Bool) -> [String: NEBasePinMessageCell.Type] {
     [
       "\(MessageType.text.rawValue)":
@@ -130,6 +130,7 @@ public class ChatMessageHelper: NSObject {
   /// 获取收藏列表单元格注册列表
   /// - Parameter isFun: 是否是娱乐皮肤
   /// - Returns: 单元格注册列表
+  @nonobjc
   public static func getCollectionCellRegisterDic(isFun: Bool) -> [String: NEBaseCollectionMessageCell.Type] {
     [
       "\(MessageType.text.rawValue)":
@@ -159,6 +160,7 @@ public class ChatMessageHelper: NSObject {
   /// 构造消息体
   /// - Parameter message: 消息
   /// - Returns: 消息体
+  @nonobjc
   public static func modelFromMessage(message: V2NIMMessage) -> MessageModel {
     var model: MessageModel
     switch message.messageType {
@@ -166,7 +168,7 @@ public class ChatMessageHelper: NSObject {
       model = MessageVideoModel(message: message)
     case .MESSAGE_TYPE_TEXT:
       // 数字人回复的消息使用 Markdown 解析
-      if message.aiConfig?.aiStatus == .MESSAGE_AI_STATUS_RESPONSE {
+      if isAISender(message) {
         return MessageAIStreamModel(message: message)
       }
       // 机器人回复的消息也使用 Markdown 解析（与数字人一致）
@@ -219,6 +221,7 @@ public class ChatMessageHelper: NSObject {
   /// - Parameters:
   ///   - message: 消息
   ///   - completion: 完成回调
+  @nonobjc
   public static func modelFromMessage(message: V2NIMMessage, _ completion: @escaping (MessageModel) -> Void) {
     var model: MessageModel
     switch message.messageType {
@@ -227,7 +230,7 @@ public class ChatMessageHelper: NSObject {
       completion(model)
     case .MESSAGE_TYPE_TEXT:
       // 数字人回复的消息使用 Markdown 解析
-      if message.aiConfig?.aiStatus == .MESSAGE_AI_STATUS_RESPONSE {
+      if isAISender(message) {
         completion(MessageAIStreamModel(message: message))
         return
       }
@@ -305,6 +308,7 @@ public class ChatMessageHelper: NSObject {
   /// 获取消息列表的中所有图片消息的 url
   /// - Parameter messages: 消息列表
   /// - Returns: (current 下标， 图片路径列表)
+  @nonobjc
   public static func getUrls(_ current: MessageModel?,
                              _ messages: [MessageModel]) -> (Int, [String]) {
     NEALog.infoLog(ModuleName + " " + className(), desc: #function)
@@ -336,6 +340,7 @@ public class ChatMessageHelper: NSObject {
   /// - Parameters:
   ///   - model: 消息体
   ///   - lastModel: 最后一条消息
+  @nonobjc
   static func addTimeMessage(_ model: MessageModel, _ lastModel: MessageModel?) {
     guard let message = model.message else {
       NEALog.errorLog(ModuleName + " " + className(), desc: #function + ", model.message is nil")
@@ -400,6 +405,7 @@ public class ChatMessageHelper: NSObject {
     }
   }
 
+  @nonobjc
   public static func getAIErrorMsage(_ errorCode: NSInteger) -> String? {
     var content: String?
     switch errorCode {
@@ -454,6 +460,7 @@ public class ChatMessageHelper: NSObject {
   /// 构建合并转发消息附件的 header
   /// - Parameters:
   ///   - messageCount: 消息数量
+  @nonobjc
   public static func buildHeader(messageCount: Int) -> String {
     var dic = [String: Any]()
     dic["version"] = 0 // 功能版本
@@ -469,6 +476,7 @@ public class ChatMessageHelper: NSObject {
   /// - Parameters:
   ///   - messages: 消息
   ///   - completion: 完成回调
+  @nonobjc
   public static func buildBody(messages: [V2NIMMessage],
                                _ completion: @escaping (String, [[String: Any]]) -> Void) {
     let enter = "\n" // 分隔符
@@ -518,6 +526,7 @@ public class ChatMessageHelper: NSObject {
   /// 获取消息的客户端本地扩展信息（转换为[String: Any]）
   /// - Parameter message: 消息
   /// - Returns: 客户端本地扩展信息
+  @nonobjc
   public static func getMessageServerExtension(message: V2NIMMessage) -> [String: Any]? {
     guard let localExtension = message.serverExtension else { return nil }
 
@@ -530,6 +539,7 @@ public class ChatMessageHelper: NSObject {
   /// 判断消息是否已撤回
   /// - Parameter message: 消息
   /// - Returns: 是否已撤回
+  @nonobjc
   public static func isRevokeMessage(message: V2NIMMessage?) -> Bool {
     guard let message = message else { return false }
 
@@ -543,6 +553,7 @@ public class ChatMessageHelper: NSObject {
   /// 获取消息撤回前的内容（用于重新编辑）
   /// - Parameter message: 消息
   /// - Returns: 撤回前的内容
+  @nonobjc
   public static func getRevokeMessageContent(model: MessageModel) -> String? {
     guard let message = model.message, model.type == .text || model.type == .richText else { return nil }
 
@@ -561,6 +572,7 @@ public class ChatMessageHelper: NSObject {
   /// 生成回复信息键值对
   /// - Parameter messageRefer: 消息 refer
   /// - Returns: 回复消息 refer 组成的 map
+  @nonobjc
   public static func createReplyDic(_ messageRefer: V2NIMMessageRefer) -> [String: Any] {
     let yxReplyMsg: [String: Any] = [
       "idClient": messageRefer.messageClientId as Any,
@@ -578,6 +590,7 @@ public class ChatMessageHelper: NSObject {
   /// 生成回复信息refer
   /// - Parameter params: 回复信息键值对
   /// - Returns: 回复消息的 refer
+  @nonobjc
   public static func createMessageRefer(_ params: [String: Any]?) -> V2NIMMessageRefer {
     let refer = V2NIMMessageRefer()
     refer.messageClientId = params?["idClient"] as? String
@@ -597,6 +610,7 @@ public class ChatMessageHelper: NSObject {
   /// 查找回复信息键值对
   /// - Parameter message: 消息
   /// - Returns: 回复消息 refer 组成的 map
+  @nonobjc
   public static func getReplyDictionary(message: V2NIMMessage) -> [String: Any]? {
     if let remoteExt = getDictionaryFromJSONString(message.serverExtension ?? ""),
        let yxReplyMsg = remoteExt[keyReplyMsgKey] as? [String: Any] {
@@ -609,11 +623,33 @@ public class ChatMessageHelper: NSObject {
   /// 判断是否是数字人发送的消息
   /// - Parameter message: 消息
   /// - Returns: 是否是数字人发送的消息
+  @nonobjc
   public static func isAISender(_ message: V2NIMMessage?) -> Bool {
-    if message?.aiConfig != nil, message?.aiConfig?.aiStatus == .MESSAGE_AI_STATUS_RESPONSE {
-      return true
+    guard let aiConfig = message?.aiConfig else {
+      return false
     }
-    return false
+
+    return aiConfig.aiStatus == .MESSAGE_AI_STATUS_RESPONSE ||
+      aiConfig.aiStreamStatus != .MESSAGE_AI_STREAM_STATUS_NONE
+  }
+
+  /// 判断流式消息是否仍处于等待首个内容分片的 loading 阶段
+  /// - Parameter message: 消息
+  /// - Returns: 是否展示 loading
+  @nonobjc
+  public static func isAIStreamLoading(_ message: V2NIMMessage?) -> Bool {
+    guard let message = message else {
+      return false
+    }
+
+    let aiStreamStatus = message.aiConfig?.aiStreamStatus
+    let streamStatus = message.streamConfig?.status
+    let isPlaceholder = aiStreamStatus == .MESSAGE_AI_STREAM_STATUS_PLACEHOLDER ||
+      streamStatus == .MESSAGE_STREAM_STATUS_PLACEHOLDER
+    let isStreaming = aiStreamStatus == .MESSAGE_AI_STREAM_STATUS_STREAMING ||
+      streamStatus == .MESSAGE_STREAM_STATUS_STREAMING
+
+    return isPlaceholder || (isStreaming && (message.text?.isEmpty ?? true))
   }
 
   /// 获取消息发送者实际 id
@@ -623,8 +659,7 @@ public class ChatMessageHelper: NSObject {
     var senderId = message?.senderId
     // 数字人回复的消息
     if IMKitConfigCenter.shared.enableAIUser,
-       message?.aiConfig != nil,
-       message?.aiConfig?.aiStatus == .MESSAGE_AI_STATUS_RESPONSE {
+       isAISender(message) {
       senderId = message?.aiConfig?.accountId
     }
 
@@ -634,6 +669,7 @@ public class ChatMessageHelper: NSObject {
   /// 判断消息是否是自己发送的，数字人以自己的名义发送的消息不视作自己发送的
   /// - Parameter message: 消息
   /// - Returns: 消息是否是自己发送的
+  @nonobjc
   public static func isSelf(message: V2NIMMessage?) -> Bool {
     ChatMessageHelper.getSenderId(message) == IMKitClient.instance.account()
   }
@@ -641,6 +677,7 @@ public class ChatMessageHelper: NSObject {
   /// 从缓存中获取用户信息
   /// - Parameter accountId: 用户 id
   /// - Returns: 用户信息
+  @nonobjc
   public static func getUserFromCache(_ accountId: String) -> NEUserWithFriend? {
     NEAIUserManager.shared.getNEUserById(accountId) ?? NEFriendUserCache.shared.getFriendInfo(accountId) ?? NEP2PChatUserCache.shared.getUserInfo(accountId) ?? NETeamUserManager.shared.getUserInfo(accountId)
   }
@@ -667,9 +704,10 @@ public class ChatMessageHelper: NSObject {
   ///   - message: 消息
   ///   - attributeStr: 消息富文本
   /// - Returns: 高亮 @ 后的消息富文本
+  @nonobjc
   public static func loadAtInMessage(_ message: V2NIMMessage?, _ attributeStr: NSMutableAttributedString?) -> NSMutableAttributedString? {
     // 数字人回复的消息不展示高亮（serverExtension 会被带回）
-    if message?.aiConfig != nil, message?.aiConfig?.aiStatus == .MESSAGE_AI_STATUS_RESPONSE {
+    if isAISender(message) {
       return nil
     }
 
@@ -754,6 +792,7 @@ public class ChatMessageHelper: NSObject {
     return attributeStr
   }
 
+  @nonobjc
   public static func loadKeywordInMessage(_ message: V2NIMMessage?,
                                           _ attributeStr: NSMutableAttributedString?,
                                           _ keyword: String,
@@ -835,6 +874,7 @@ public class ChatMessageHelper: NSObject {
   /// 获取文件 MD5 值
   /// - Parameter fileURL: 文件 URL
   /// - Returns: md5 值
+  @nonobjc
   public static func getFileChecksum(fileURL: URL) -> String? {
     // 打开文件，创建文件句柄
     let file = FileHandle(forReadingAtPath: fileURL.path)
@@ -896,6 +936,166 @@ public class ChatMessageHelper: NSObject {
     }
 
     return path
+  }
+
+  @objc(getSessionName:showAlias:)
+  public static func objc_getSessionName(_ conversationId: String, showAlias: Bool) -> String {
+    getSessionName(conversationId: conversationId, showAlias: showAlias)
+  }
+
+  @objc(getChatCellRegisterDic:)
+  public static func objc_getChatCellRegisterDic(_ isFun: Bool) -> [String: UITableViewCell.Type] {
+    getChatCellRegisterDic(isFun: isFun)
+  }
+
+  @objc(getChatCellRegisterDicWithIsFun:)
+  public static func objc_getChatCellRegisterDicWithIsFun(_ isFun: Bool) -> [String: UITableViewCell.Type] {
+    getChatCellRegisterDic(isFun: isFun)
+  }
+
+  @objc(getPinCellRegisterDic:)
+  public static func objc_getPinCellRegisterDic(_ isFun: Bool) -> [String: NEBasePinMessageCell.Type] {
+    getPinCellRegisterDic(isFun: isFun)
+  }
+
+  @objc(getCollectionCellRegisterDic:)
+  public static func objc_getCollectionCellRegisterDic(_ isFun: Bool) -> [String: NEBaseCollectionMessageCell.Type] {
+    getCollectionCellRegisterDic(isFun: isFun)
+  }
+
+  @objc(modelFromMessage:)
+  public static func objc_modelFromMessage(_ message: V2NIMMessage) -> MessageModel {
+    modelFromMessage(message: message)
+  }
+
+  @objc(modelFromMessage:completion:)
+  public static func objc_modelFromMessage(_ message: V2NIMMessage,
+                                           completion: @escaping (MessageModel) -> Void) {
+    modelFromMessage(message: message, completion)
+  }
+
+  @objc(getUrls:messages:currentIndex:)
+  public static func objc_getUrls(_ current: MessageModel?,
+                                  messages: [MessageModel],
+                                  currentIndex indexOut: UnsafeMutablePointer<Int>) -> [String] {
+    let result = getUrls(current, messages)
+    indexOut.pointee = result.0
+    return result.1
+  }
+
+  @objc(getUrlsWithModel:messages:currentIndex:showImages:)
+  public static func objc_getUrls(withModel current: MessageModel?,
+                                  messages: [MessageModel],
+                                  currentIndex indexOut: UnsafeMutablePointer<Int>,
+                                  showImages showImagesOut: AutoreleasingUnsafeMutablePointer<NSArray?>?) {
+    let result = getUrls(current, messages)
+    indexOut.pointee = result.0
+    showImagesOut?.pointee = result.1 as NSArray
+  }
+
+  @objc(getAIErrorMessage:)
+  public static func objc_getAIErrorMessage(_ errorCode: NSInteger) -> String? {
+    getAIErrorMsage(errorCode)
+  }
+
+  @objc(addTimeMessage:lastModel:)
+  public static func objc_addTimeMessage(_ model: MessageModel, lastModel: MessageModel?) {
+    addTimeMessage(model, lastModel)
+  }
+
+  @objc(ne_stringFromDate:)
+  public static func objc_stringFromDate(_ date: NSDate) -> String {
+    String.stringFromDate(date: date as Date)
+  }
+
+  @objc(ne_stringFromDate:showHM:)
+  public static func objc_stringFromDate(_ date: NSDate, showHM: Bool) -> String {
+    String.stringFromDate(date: date as Date, showHM: showHM)
+  }
+
+  @objc(clearForwardReplyMark:)
+  public static func clearForwardReplyMark(_ forwardMessage: V2NIMMessage) {
+    clearForwardAtMark(forwardMessage)
+  }
+
+  @objc(buildHeader:)
+  public static func objc_buildHeader(_ messageCount: Int) -> String {
+    buildHeader(messageCount: messageCount)
+  }
+
+  @objc(buildBody:completion:)
+  public static func objc_buildBody(_ messages: [V2NIMMessage],
+                                    completion: @escaping (String, [[String: Any]]) -> Void) {
+    buildBody(messages: messages, completion)
+  }
+
+  @objc(getMessageServerExtension:)
+  public static func objc_getMessageServerExtension(_ message: V2NIMMessage) -> [String: Any]? {
+    getMessageServerExtension(message: message)
+  }
+
+  @objc(isRevokeMessage:)
+  public static func objc_isRevokeMessage(_ message: V2NIMMessage?) -> Bool {
+    isRevokeMessage(message: message)
+  }
+
+  @objc(getRevokeMessageContent:)
+  public static func objc_getRevokeMessageContent(_ model: MessageModel) -> String? {
+    getRevokeMessageContent(model: model)
+  }
+
+  @objc(createReplyDic:)
+  public static func objc_createReplyDic(_ messageRefer: V2NIMMessageRefer) -> [String: Any] {
+    createReplyDic(messageRefer)
+  }
+
+  @objc(createMessageRefer:)
+  public static func objc_createMessageRefer(_ params: [String: Any]?) -> V2NIMMessageRefer {
+    createMessageRefer(params)
+  }
+
+  @objc(getReplyDictionary:)
+  public static func objc_getReplyDictionary(_ message: V2NIMMessage) -> [String: Any]? {
+    getReplyDictionary(message: message)
+  }
+
+  @objc(isAISender:)
+  public static func objc_isAISender(_ message: V2NIMMessage?) -> Bool {
+    isAISender(message)
+  }
+
+  @objc(isSelf:)
+  public static func objc_isSelf(_ message: V2NIMMessage?) -> Bool {
+    isSelf(message: message)
+  }
+
+  @objc(getUserFromCache:)
+  public static func objc_getUserFromCache(_ accountId: String) -> NEUserWithFriend? {
+    getUserFromCache(accountId)
+  }
+
+  @objc(loadAtInMessage:attributeStr:)
+  public static func objc_loadAtInMessage(_ message: V2NIMMessage?,
+                                          attributeStr: NSMutableAttributedString?) -> NSMutableAttributedString? {
+    loadAtInMessage(message, attributeStr)
+  }
+
+  @objc(loadKeywordInMessage:attributeStr:keyword:themeColor:)
+  public static func objc_loadKeywordInMessage(_ message: V2NIMMessage?,
+                                               attributeStr: NSMutableAttributedString?,
+                                               keyword: String,
+                                               themeColor: UIColor) -> NSMutableAttributedString? {
+    loadKeywordInMessage(message, attributeStr, keyword, themeColor)
+  }
+
+  @objc(getFileChecksum:)
+  public static func objc_getFileChecksum(_ fileURL: NSURL) -> String? {
+    getFileChecksum(fileURL: fileURL as URL)
+  }
+
+  @objc(getFileChecksumWithFileURL:)
+  public static func objc_getFileChecksumWithFileURL(_ fileURL: NSURL) -> String? {
+    getFileChecksum(fileURL: fileURL as URL)
   }
 }
 

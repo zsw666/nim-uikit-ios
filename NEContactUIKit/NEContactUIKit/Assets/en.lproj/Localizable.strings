@@ -12,6 +12,7 @@
 "remove_black" = "Release ";
 
 "blacklist"="Blocklist";
+"no_blacklist"="No blocked contacts";
 "my_teams"="My Groups";
 "my_ai_user"="My AI User";
 "my_ai_robot"="My Robot";

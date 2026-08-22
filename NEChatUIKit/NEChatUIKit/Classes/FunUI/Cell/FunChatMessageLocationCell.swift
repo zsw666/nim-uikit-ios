@@ -107,14 +107,14 @@ open class FunChatMessageLocationCell: FunChatMessageBaseCell {
   public lazy var pointImageRight: UIImageView = {
     let imageView = UIImageView()
     imageView.translatesAutoresizingMaskIntoConstraints = false
-    imageView.image = chatCoreLoader.loadImage("location_point")
+    imageView.image = chatUIKitLoader.loadImage("location_point")
     return imageView
   }()
 
   public lazy var pointImageLeft: UIImageView = {
     let imageView = UIImageView()
     imageView.translatesAutoresizingMaskIntoConstraints = false
-    imageView.image = chatCoreLoader.loadImage("location_point")
+    imageView.image = chatUIKitLoader.loadImage("location_point")
     return imageView
   }()
 

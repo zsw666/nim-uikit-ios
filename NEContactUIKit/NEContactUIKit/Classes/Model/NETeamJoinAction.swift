@@ -5,7 +5,6 @@
 
 import Foundation
 import NEChatKit
-import NECoreIM2Kit
 import NIMSDK
 
 /// 入群申请已读时间戳

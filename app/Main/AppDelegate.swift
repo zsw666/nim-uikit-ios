@@ -5,7 +5,7 @@
 
 import UIKit
 import NIMSDK
-import NECoreIM2Kit
+import NEChatKit
 
 @main
 class AppDelegate: UIResponder, UIApplicationDelegate {

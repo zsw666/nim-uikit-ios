@@ -2,7 +2,7 @@
 // Use of this source code is governed by a MIT license that can be
 // found in the LICENSE file.
 
-import NECommonUIKit
+import NEBaseUIKit
 import UIKit
 
 /// 转发-选择页面-已选 CollectionViewCell -基类
@@ -28,7 +28,7 @@ open class NEBaseSelectedCell: NEBaseContactUnCheckCell {
 
     avatarImageView.configHeadData(
       headUrl: model.avatar,
-      name: model.name ?? "",
+      name: model.avatarName ?? V2NIMConversationIdUtil.conversationTargetId(model.conversationId ?? "") ?? "",
       uid: V2NIMConversationIdUtil.conversationTargetId(model.conversationId ?? "") ?? ""
     )
   }

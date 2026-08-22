@@ -3,7 +3,6 @@
 // found in the LICENSE file.
 
 import NEChatKit
-import NECoreIM2Kit
 import UIKit
 
 @objcMembers
@@ -29,24 +28,28 @@ open class MultiSelectViewModel: ContactViewModel {
   ///   - filters: 需要过滤的会话id列表
   ///   - completion: 完成回调
   open func loadAllData(_ filters: Set<String>? = nil, _ completion: @escaping (NSError?) -> Void) {
-    // 加载群聊
-    loadData(2, filters) { [weak self] error in
-      if let err = error {
-        self?.sessions.removeAll()
-        completion(err)
-        return
-      }
-
-      // 加载好友
-      self?.loadData(1, filters) { error in
+    // 先完成机器人缓存同步，保证最近会话和好友列表过滤准确。
+    NEAIRobotManager.shared.loadAll { [weak self] _ in
+      guard let self = self else { return }
+      // 加载群聊
+      self.loadData(2, filters) { error in
         if let err = error {
-          self?.sessions.removeAll()
+          self.sessions.removeAll()
           completion(err)
           return
         }
 
-        // 加载最近会话
-        self?.loadData(0, filters, completion)
+        // 加载好友
+        self.loadData(1, filters) { error in
+          if let err = error {
+            self.sessions.removeAll()
+            completion(err)
+            return
+          }
+
+          // 加载最近会话
+          self.loadData(0, filters, completion)
+        }
       }
     }
   }
@@ -62,24 +65,24 @@ open class MultiSelectViewModel: ContactViewModel {
       if conversationList.isEmpty {
         getConversationList(filters) { [weak self] error in
           if let conversationList = self?.conversationList {
-            self?.sessions = conversationList
+            self?.sessions = conversationList.filter { !(self?.isRobotConversation($0.conversationId) ?? false) }
           }
           completion(error)
         }
       } else {
-        sessions = conversationList
+        sessions = conversationList.filter { !isRobotConversation($0.conversationId) }
         completion(nil)
       }
     } else if index == 1 {
       if contactList.isEmpty {
         getContactList(filters) { [weak self] error in
           if let contactList = self?.contactList {
-            self?.sessions = contactList
+            self?.sessions = contactList.filter { !(self?.isRobotConversation($0.conversationId) ?? false) }
           }
           completion(error)
         }
       } else {
-        sessions = contactList
+        sessions = contactList.filter { !isRobotConversation($0.conversationId) }
         completion(nil)
       }
     } else if index == 2 {
@@ -101,18 +104,22 @@ open class MultiSelectViewModel: ContactViewModel {
   /// - Returns: 最近转发列表
   open func loadRecentForward() -> [MultiSelectModel] {
     var recentSessions = [MultiSelectModel]()
-
     var recentList = settingRepo.getRecentForward() ?? []
+    let invalidRobotIds = Set(recentList.filter { isRobotConversation($0) })
+    if !invalidRobotIds.isEmpty {
+      recentList.removeAll { invalidRobotIds.contains($0) }
+      settingRepo.updateRecentForward(recentList)
+    }
     for recent in recentList {
       // 从最近会话中查找对应的会话
       if let session = conversationList.first(where: { $0.conversationId == recent }) {
-        recentSessions.append(session)
+        if !isRobotConversation(session.conversationId) { recentSessions.append(session) }
         continue
       }
 
       // 从我的好友中查找对应的会话
       if let session = contactList.first(where: { $0.conversationId == recent }) {
-        recentSessions.append(session)
+        if !isRobotConversation(session.conversationId) { recentSessions.append(session) }
         continue
       }
 
@@ -137,6 +144,10 @@ open class MultiSelectViewModel: ContactViewModel {
   open func getConversationList(_ filters: Set<String>? = nil, _ completion: @escaping (NSError?) -> Void) {
     if NIMSDK.shared().v2Option?.enableV2CloudConversation == false {
       localConversationRepo.getConversationList(0, conversationLimit) { [weak self] conversations, offset, finished, error in
+        guard let self = self else {
+          completion(error)
+          return
+        }
         if let error = error {
           NEALog.errorLog(ModuleName + " " + MultiSelectViewModel.className(), desc: #function + ", error: " + error.localizedDescription)
         } else if var conversations = conversations {
@@ -144,26 +155,27 @@ open class MultiSelectViewModel: ContactViewModel {
           if let filterConvs = filters {
             conversations = conversations.filter { !filterConvs.contains($0.conversationId) }
           }
+          conversations = conversations.filter { !self.isRobotConversation($0.conversationId) }
 
           for conversation in conversations {
             let model = MultiSelectModel()
 
             // 校验好友是否已存在
-            if let model = self?.findFriend(conversation.conversationId) {
-              self?.conversationList.append(model)
+            if let model = self.findFriend(conversation.conversationId) {
+              self.conversationList.append(model)
               continue
             }
 
             // 校验群聊是否已存在
-            if let model = self?.findTeam(conversation.conversationId) {
-              self?.conversationList.append(model)
+            if let model = self.findTeam(conversation.conversationId) {
+              self.conversationList.append(model)
               continue
             }
 
             model.conversationId = conversation.conversationId
             model.name = conversation.name
             model.avatar = conversation.avatar
-            self?.conversationList.append(model)
+            self.conversationList.append(model)
           }
         }
         completion(error)
@@ -172,6 +184,10 @@ open class MultiSelectViewModel: ContactViewModel {
     }
 
     conversationRepo.getConversationList(0, conversationLimit) { [weak self] conversations, offset, finished, error in
+      guard let self = self else {
+        completion(error)
+        return
+      }
       if let error = error {
         NEALog.errorLog(ModuleName + " " + MultiSelectViewModel.className(), desc: #function + ", error: " + error.localizedDescription)
       } else if var conversations = conversations {
@@ -179,26 +195,27 @@ open class MultiSelectViewModel: ContactViewModel {
         if let filterConvs = filters {
           conversations = conversations.filter { !filterConvs.contains($0.conversationId) }
         }
+        conversations = conversations.filter { !self.isRobotConversation($0.conversationId) }
 
         for conversation in conversations {
           let model = MultiSelectModel()
 
           // 校验好友是否已存在
-          if let model = self?.findFriend(conversation.conversationId) {
-            self?.conversationList.append(model)
+          if let model = self.findFriend(conversation.conversationId) {
+            self.conversationList.append(model)
             continue
           }
 
           // 校验群聊是否已存在
-          if let model = self?.findTeam(conversation.conversationId) {
-            self?.conversationList.append(model)
+          if let model = self.findTeam(conversation.conversationId) {
+            self.conversationList.append(model)
             continue
           }
 
           model.conversationId = conversation.conversationId
           model.name = conversation.name
           model.avatar = conversation.avatar
-          self?.conversationList.append(model)
+          self.conversationList.append(model)
         }
       }
       completion(error)
@@ -213,14 +230,20 @@ open class MultiSelectViewModel: ContactViewModel {
     NEALog.infoLog(ModuleName + " " + className(), desc: #function + ", filters.count: \(filters?.count ?? 0)")
 
     getContactList(filters) { [weak self] result, error in
+      guard let self = self else {
+        completion(error)
+        return
+      }
       for item in result ?? [] {
         for contact in item.contacts {
           let conversationId = V2NIMConversationIdUtil.p2pConversationId(contact.user?.user?.accountId ?? "")
+          if self.isRobotConversation(conversationId) { continue }
           let model = MultiSelectModel()
           model.conversationId = conversationId
           model.avatar = contact.user?.user?.avatar
+          model.avatarName = contact.user?.user?.name ?? contact.user?.user?.accountId
           model.name = contact.user?.showName() ?? ""
-          self?.contactList.append(model)
+          self.contactList.append(model)
         }
       }
       completion(error)
@@ -249,9 +272,9 @@ open class MultiSelectViewModel: ContactViewModel {
           let conversationId = V2NIMConversationIdUtil.teamConversationId(team.teamId ?? "")
           let model = MultiSelectModel()
           model.conversationId = conversationId
-          model.name = team.teamName
-          model.avatar = team.avatarUrl
-          model.memberCount = team.memberNumber ?? 0
+          model.name = team.name
+          model.avatar = team.avatar
+          model.memberCount = team.memberCount
           self?.teamList.append(model)
         }
 
@@ -282,6 +305,14 @@ open class MultiSelectViewModel: ContactViewModel {
       }
     }
     return nil
+  }
+
+  private func isRobotConversation(_ conversationId: String?) -> Bool {
+    guard let conversationId = conversationId,
+          let accountId = V2NIMConversationIdUtil.conversationTargetId(conversationId) else {
+      return false
+    }
+    return NEAIRobotManager.shared.isRobot(accountId)
   }
 
   open func searchText(_ text: String) {

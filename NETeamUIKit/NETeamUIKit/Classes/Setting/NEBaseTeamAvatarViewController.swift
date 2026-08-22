@@ -4,7 +4,7 @@
 // found in the LICENSE file.
 
 import NEChatUIKit
-import NECommonUIKit
+import NEBaseUIKit
 import NIMSDK
 import UIKit
 
@@ -104,7 +104,7 @@ open class NEBaseTeamAvatarViewController: NETeamBaseViewController, UICollectio
     }
 
     photoImageView.translatesAutoresizingMaskIntoConstraints = false
-    photoImageView.image = teamCoreLoader.loadImage("photo")
+    photoImageView.image = teamUIKitLoader.loadImage("photo")
     photoImageView.accessibilityIdentifier = "id.camera"
     headerBackView.addSubview(photoImageView)
 

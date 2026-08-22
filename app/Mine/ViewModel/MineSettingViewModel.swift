@@ -53,15 +53,6 @@ public class MineSettingViewModel: NSObject {
     }
     model.cellModels.append(style)
 
-    // 翻译
-    let translation = SettingCellModel()
-    translation.cellName = localizable("translation_setting")
-    translation.type = SettingCellType.SettingArrowCell.rawValue
-    translation.cellClick = {
-      weakSelf?.delegate?.didClickTranslationSetting()
-    }
-    model.cellModels.append(translation)
-
 //        let cleanCache = SettingCellModel()
 //        cleanCache.cellName = "清理缓存"
 //        cleanCache.type = SettingCellType.SettingArrowCell.rawValue
@@ -136,7 +127,7 @@ public class MineSettingViewModel: NSObject {
     weak var weakSelf = self
 
     let configTest = SettingCellModel()
-    configTest.cellName = "全局配置"
+    configTest.cellName = localizable("global_config")
     configTest.type = SettingCellType.SettingArrowCell.rawValue
     configTest.cellClick = {
       weakSelf?.delegate?.didClickConfigTest()
@@ -144,7 +135,7 @@ public class MineSettingViewModel: NSObject {
     model.cellModels.append(configTest)
 
     let sdkConfigModel = SettingCellModel()
-    sdkConfigModel.cellName = "私有云环境配置"
+    sdkConfigModel.cellName = localizable("private_cloud_config")
     sdkConfigModel.type = SettingCellType.SettingArrowCell.rawValue
     sdkConfigModel.cellClick = {
       weakSelf?.delegate?.didClickSDKConfig()
@@ -152,7 +143,7 @@ public class MineSettingViewModel: NSObject {
     model.cellModels.append(sdkConfigModel)
 
     let pushConfigModel = SettingCellModel()
-    pushConfigModel.cellName = "推送配置"
+    pushConfigModel.cellName = localizable("push_config")
     pushConfigModel.type = SettingCellType.SettingArrowCell.rawValue
     pushConfigModel.cellClick = {
       weakSelf?.delegate?.didClickPushConfig()
@@ -166,6 +157,14 @@ public class MineSettingViewModel: NSObject {
       weakSelf?.delegate?.didClickLanguage()
     }
     model.cellModels.append(languageConfigModel)
+
+    let translation = SettingCellModel()
+    translation.cellName = localizable("translation_setting")
+    translation.type = SettingCellType.SettingArrowCell.rawValue
+    translation.cellClick = {
+      weakSelf?.delegate?.didClickTranslationSetting()
+    }
+    model.cellModels.append(translation)
 
     model.setCornerType()
     return model

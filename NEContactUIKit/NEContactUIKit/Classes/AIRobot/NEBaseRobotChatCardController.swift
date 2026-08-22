@@ -3,8 +3,7 @@
 // found in the LICENSE file.
 
 import NEChatKit
-import NECommonUIKit
-import NECoreKit
+import NEBaseUIKit
 import NIMSDK
 import UIKit
 
@@ -130,12 +129,14 @@ open class NEBaseRobotChatCardController: NEContactBaseViewController {
   @objc open func didTapChatButton() {
     guard let nav = navigationController else { return }
     guard let conversationId = V2NIMConversationIdUtil.p2pConversationId(bot.accid) else { return }
-    // 先 pop 当前名片页，再 push 聊天页（复用已有 ChatVC）
+    // 先 pop 当前名片页，再进入机器人子会话列表。
     CATransaction.begin()
     CATransaction.setCompletionBlock {
-      Router.shared.use(PushP2pChatVCRouter,
+      Router.shared.use(PushBotSubSessionListRouter,
                         parameters: ["nav": nav,
                                      "conversationId": conversationId as Any,
+                                     "sessionId": self.bot.accid,
+                                     "sessionName": self.bot.name ?? self.bot.accid,
                                      "animated": true],
                         closure: nil)
     }

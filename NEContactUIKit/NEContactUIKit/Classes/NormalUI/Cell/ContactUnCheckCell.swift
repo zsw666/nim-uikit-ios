@@ -2,7 +2,7 @@
 // Use of this source code is governed by a MIT license that can be
 // found in the LICENSE file.
 
-import NECommonUIKit
+import NEBaseUIKit
 import UIKit
 
 @objcMembers
@@ -31,7 +31,7 @@ open class ContactUnCheckCell: NEBaseContactUnCheckCell {
 
     avatarImageView.configHeadData(
       headUrl: model.user?.user?.avatar,
-      name: model.user?.shortName() ?? "",
+      name: model.user?.shortName(showAlias: false) ?? "",
       uid: model.user?.user?.accountId ?? ""
     )
   }

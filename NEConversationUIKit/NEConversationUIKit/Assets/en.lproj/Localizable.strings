@@ -41,6 +41,37 @@
 "message_recalled"="Message recalled";
 
 "you_were_mentioned"="[You were mentioned]";
+"bot_sub_session_prefix"="[Sub-session] ";
 
 // error toast
 "leave_team_desc"="You have been removed from the group chat or the group chat has been dissolved.";
+"conversation_group_title"="Conversation Groups";
+"conversation_group_all"="All";
+"conversation_group_at_me"="@Me";
+"conversation_group_unread"="Unread";
+"conversation_group_common"="Common";
+"conversation_group_hidden"="Hidden";
+"conversation_group_create"="New Group";
+"conversation_group_setting_title"="Group Settings";
+"conversation_group_name"="Group Name";
+"conversation_group_edit_name"="Edit Group Name";
+"conversation_group_add_member"="Add Conversation";
+"conversation_group_add_title"="Add Conversations(%d/%d)";
+"conversation_group_members"="Conversation List (%ld)";
+"conversation_group_name_placeholder"="Enter group name";
+"conversation_group_name_empty"="Enter group name";
+"conversation_group_delete_title"="Delete group?";
+"conversation_group_delete_message"="Conversations in this group will not be deleted.";
+"conversation_group_belonged_limit"="The number of groups this conversation belongs to has exceeded the limit";
+"conversation_group_conversation_not_exist"="Conversation does not exist";
+"conversation_group_not_exist"="Conversation group does not exist";
+"conversation_group_limit"="Conversation group limit reached";
+"conversation_group_members_limit"="Group conversation limit reached";
+"conversation_group_add_failed"="Add failed";
+"conversation_group_add_partial_failed"="Some conversations failed to add";
+"conversation_group_search_hint"="Please enter the conversation you want to search";
+"cancel"="Cancel";
+"save"="Save";
+"confirm"="OK";
+"remove"="Remove";
+"search"="Search";

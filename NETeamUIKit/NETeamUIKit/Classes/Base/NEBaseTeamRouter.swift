@@ -3,9 +3,7 @@
 // found in the LICENSE file.
 
 import Foundation
-import NECommonKit
-import NECoreIM2Kit
-import NECoreKit
+import NEChatKit
 import NIMSDK
 
 @objcMembers

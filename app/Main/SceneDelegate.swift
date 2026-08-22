@@ -13,6 +13,41 @@ import NERtcCallKit
 import NERtcCallUIKit
 import PushKit
 
+private final class MapFallbackViewController: UIViewController {
+  private let mapType: NEMapType
+
+  init(mapType: NEMapType) {
+    self.mapType = mapType
+    super.init(nibName: nil, bundle: nil)
+  }
+
+  @available(*, unavailable)
+  required init?(coder: NSCoder) {
+    fatalError("init(coder:) has not been implemented")
+  }
+
+  override func viewDidLoad() {
+    super.viewDidLoad()
+    view.backgroundColor = .systemBackground
+    title = mapType == .search ? "位置搜索" : "位置详情"
+
+    let label = UILabel()
+    label.translatesAutoresizingMaskIntoConstraints = false
+    label.numberOfLines = 0
+    label.textAlignment = .center
+    label.textColor = .secondaryLabel
+    label.font = .systemFont(ofSize: 15)
+    label.text = "当前示例构建未包含地图模块，位置相关能力已在此链路下禁用。"
+    view.addSubview(label)
+
+    NSLayoutConstraint.activate([
+      label.leadingAnchor.constraint(equalTo: view.leadingAnchor, constant: 24),
+      label.trailingAnchor.constraint(equalTo: view.trailingAnchor, constant: -24),
+      label.centerYAnchor.constraint(equalTo: view.centerYAnchor),
+    ])
+  }
+}
+
 class SceneDelegate: UIResponder {
   static var window: UIWindow?
 
@@ -143,6 +178,7 @@ class SceneDelegate: UIResponder {
   func loadService() {
     // 注册路由
     ChatKitClient.shared.setupInit(isFun: !NEStyleManager.instance.isNormalStyle())
+    registerMapFallbackRouter()
     if NEStyleManager.instance.isNormalStyle() == false {
       registerFunCustom()
     } else {
@@ -392,6 +428,7 @@ extension SceneDelegate: PKPushRegistryDelegate {
     // 判断是否是云信发的payload
     if payload.dictionaryPayload["nim"] == nil {
       print("not found nim payload")
+      completion()
       return
     }
 
@@ -454,6 +491,16 @@ extension SceneDelegate: NEIMKitClientListener {
     if detail.reason == .KICKED_OFFLINE_REASON_SERVER {
       SceneDelegate.window?.neMakeToast(localizable("account_kicked_offline"))
       loginWithUI()
+    }
+  }
+
+  func registerMapFallbackRouter() {
+    Router.shared.register(NERouterUrl.LocationVCRouter) { param in
+      guard let nav = param["nav"] as? UINavigationController else { return }
+      let mapTypeValue = param["type"] as? Int ?? NEMapType.detail.rawValue
+      let mapType = NEMapType(rawValue: mapTypeValue) ?? .detail
+      let controller = MapFallbackViewController(mapType: mapType)
+      nav.pushViewController(controller, animated: true)
     }
   }
 }

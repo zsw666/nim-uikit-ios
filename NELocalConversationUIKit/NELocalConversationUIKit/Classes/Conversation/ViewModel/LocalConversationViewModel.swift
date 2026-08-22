@@ -4,7 +4,6 @@
 
 import Foundation
 import NEChatKit
-import NECoreIM2Kit
 import NIMSDK
 
 @objc
@@ -62,6 +61,7 @@ open class LocalConversationViewModel: NSObject, NELocalConversationListener, NE
     super.init()
     NotificationCenter.default.addObserver(self, selector: #selector(atMessageChange), name: Notification.Name(localAtMessageChangeNoti), object: nil)
     NotificationCenter.default.addObserver(self, selector: #selector(deleteConversationNoti), name: NENotificationName.deleteConversationNotificationName, object: nil)
+    NotificationCenter.default.addObserver(self, selector: #selector(robotDidRemove), name: NEAIRobotManager.robotDidRemoveNotification, object: nil)
     conversationRepo.addLocalConversationListener(self)
     ChatRepo.shared.addChatListener(self)
     TeamRepo.shared.addTeamListener(self)
@@ -102,14 +102,43 @@ open class LocalConversationViewModel: NSObject, NELocalConversationListener, NE
     }
   }
 
+  @objc
+  private func robotDidRemove(_ notification: Notification) {
+    guard let accountId = notification.object as? String,
+          let conversationId = V2NIMConversationIdUtil.p2pConversationId(accountId) else {
+      return
+    }
+    DispatchQueue.main.async { [weak self] in
+      guard let self, self.conversationDic[conversationId] != nil else {
+        return
+      }
+      self.delegate?.reloadTableView()
+    }
+  }
+
   open func getAIUserList() {
     if IMKitConfigCenter.shared.enableAIUser {
       NEAIUserManager.shared.getAIUserList()
     }
   }
 
+  private func executeOnMain(_ work: @escaping () -> Void) {
+    if Thread.isMainThread {
+      work()
+    } else {
+      DispatchQueue.main.async(execute: work)
+    }
+  }
+
   /// 分页获取会话列表
   open func getConversationListByPage(_ completion: @escaping (NSError?, Bool?) -> Void) {
+    guard Thread.isMainThread else {
+      DispatchQueue.main.async { [weak self] in
+        self?.getConversationListByPage(completion)
+      }
+      return
+    }
+
     if syncFinished == false {
       callBack = completion
     }
@@ -117,50 +146,57 @@ open class LocalConversationViewModel: NSObject, NELocalConversationListener, NE
     NEALog.infoLog(className() + " [Performance]", desc: #function + " start, syncFinished:\(syncFinished), timestamp: \(Date().timeIntervalSince1970)")
     conversationRepo.getConversationList(offset, page) { [weak self] conversations, offset, finished, error in
       NEALog.infoLog((LocalConversationViewModel.className()) + " [Performance]", desc: #function + " onSuccess, syncFinished:\(self?.syncFinished ?? false), count: \(conversations?.count ?? 0), timestamp: \(Date().timeIntervalSince1970)")
-      if error == nil {
-        if let set = offset {
-          // 更新索引
-          self?.offset = set
+      guard let self else {
+        completion(error, finished)
+        return
+      }
+
+      DispatchQueue.main.async {
+        guard error == nil else {
+          completion(error, finished)
+          return
         }
 
-        conversations?.forEach { conversation in
-          // 区分置顶消息和非置顶消息
-          self?.addOrUpdateConversationData(conversation)
+        if let set = offset {
+          // 更新索引
+          self.offset = set
+        }
+
+        let pageConversations = conversations ?? []
+        pageConversations.forEach { conversation in
+          self.mergeConversationData(conversation)
 
           if V2NIMConversationIdUtil.conversationType(conversation.conversationId) == .CONVERSATION_TYPE_P2P,
              let accountId = V2NIMConversationIdUtil.conversationTargetId(conversation.conversationId) {
-            self?.p2pAccountIds.insert(accountId)
+            self.p2pAccountIds.insert(accountId)
           }
         }
 
         // 订阅单聊在线状态
-        if IMKitConfigCenter.shared.enableOnlineStatus,
-           let accountIds = self?.p2pAccountIds {
-          self?.subscribeOnlineStatus(Array(accountIds))
+        if IMKitConfigCenter.shared.enableOnlineStatus {
+          self.subscribeOnlineStatus(Array(self.p2pAccountIds))
         }
 
-        // 单聊会话主动拉取用户信息，避免用户信息缺失影响会话展示
-        DispatchQueue.global().async {
-          if let p2pAccountIds = self?.p2pAccountIds, !p2pAccountIds.isEmpty {
-            ContactRepo.shared.getUserListFromCloud(accountIds: Array(p2pAccountIds)) { [weak self] users, error in
-              let conversationIds = p2pAccountIds.compactMap { V2NIMConversationIdUtil.p2pConversationId($0) }
-              self?.conversationRepo.getConversationListByIds(conversationIds) { conversations, error in
-                if let conversations = conversations {
-                  for conversation in conversations {
-                    self?.conversationDic[conversation.conversationId]?.conversation = conversation
-                  }
-                  DispatchQueue.main.async {
-                    self?.delegate?.reloadTableView()
-                  }
-                }
+        self.delegate?.reloadTableView()
+        completion(error, finished)
+
+        // 单聊会话主动拉取用户信息，避免用户信息缺失影响会话展示。
+        let p2pAccountIds = self.p2pAccountIds
+        DispatchQueue.global().async { [weak self] in
+          guard let self, !p2pAccountIds.isEmpty else { return }
+          ContactRepo.shared.getUserListFromCloud(accountIds: Array(p2pAccountIds)) { [weak self] _, _ in
+            guard let self else { return }
+            let conversationIds = p2pAccountIds.compactMap { V2NIMConversationIdUtil.p2pConversationId($0) }
+            self.conversationRepo.getConversationListByIds(conversationIds) { [weak self] conversations, _ in
+              guard let self, let conversations else { return }
+              DispatchQueue.main.async {
+                conversations.forEach { self.mergeConversationData($0) }
+                self.delegate?.reloadTableView()
               }
             }
           }
         }
-
-        self?.delegate?.reloadTableView()
       }
-      completion(error, finished)
     }
   }
 
@@ -168,6 +204,16 @@ open class LocalConversationViewModel: NSObject, NELocalConversationListener, NE
   /// - Parameter conversation 会话对象
   open func addOrUpdateConversationData(_ conversation: V2NIMLocalConversation,
                                         _ isAdd: Bool = false) {
+    guard Thread.isMainThread else {
+      DispatchQueue.main.async { [weak self] in
+        self?.addOrUpdateConversationData(conversation, isAdd)
+      }
+      return
+    }
+    mergeConversationData(conversation)
+  }
+
+  private func mergeConversationData(_ conversation: V2NIMLocalConversation) {
     if let cacheModel = conversationDic[conversation.conversationId] {
       cacheModel.conversation = conversation
 
@@ -183,11 +229,7 @@ open class LocalConversationViewModel: NSObject, NELocalConversationListener, NE
       let model = NELocalConversationListModel()
       model.conversation = conversation
       conversationDic[conversation.conversationId] = model
-      if isAdd {
-        compareToInsert(model)
-      } else {
-        conversationListData.append(model)
-      }
+      compareToInsert(model)
     }
   }
 
@@ -195,15 +237,19 @@ open class LocalConversationViewModel: NSObject, NELocalConversationListener, NE
   /// - Parameter cacheModel: 会话模型
   open func compareToInsert(_ cacheModel: NELocalConversationListModel) {
     for (index, model) in conversationListData.enumerated() {
-      if let sortOrder = model.conversation?.sortOrder,
-         let cacheSortOrder = cacheModel.conversation?.sortOrder,
-         sortOrder <= cacheSortOrder {
+      if shouldInsert(cacheModel, before: model) {
         conversationListData.insert(cacheModel, at: index)
         return
       }
     }
 
     conversationListData.append(cacheModel)
+  }
+
+  @nonobjc
+  private func shouldInsert(_ lhsModel: NELocalConversationListModel,
+                            before rhsModel: NELocalConversationListModel) -> Bool {
+    return (lhsModel.conversation?.sortOrder ?? 0) > (rhsModel.conversation?.sortOrder ?? 0)
   }
 
   /// 删除会话
@@ -249,66 +295,133 @@ open class LocalConversationViewModel: NSObject, NELocalConversationListener, NE
   }
 
   open func updateUserInfo(_ model: NELocalConversationListModel, _ user: NEUserWithFriend, _ conversation: V2NIMLocalConversation) {
-    model.conversation = conversation
+    addOrUpdateConversationData(conversation)
   }
 
   open func updateTeamInfo(_ model: NELocalConversationListModel, _ team: V2NIMTeam, _ conversation: V2NIMLocalConversation) {
-    model.conversation = conversation
+    addOrUpdateConversationData(conversation)
   }
 
   // 创建会话回调
   open func onLocalConversationCreated(_ conversation: V2NIMLocalConversation) {
-    NEALog.infoLog(ModuleName + " " + className, desc: #function + ", did add session targetId:" + conversation.conversationId)
-    if checkDismissTeamNoti(conversation) {
+    executeOnMain { [weak self] in
+      guard let self else { return }
+      NEALog.infoLog(ModuleName + " " + self.className, desc: #function + ", did add session targetId:" + conversation.conversationId)
+      if self.checkDismissTeamNoti(conversation) {
+        return
+      }
+
+      self.mergeConversationData(conversation)
+
+      // 订阅单聊在线状态
+      if IMKitConfigCenter.shared.enableOnlineStatus,
+         let accountId = V2NIMConversationIdUtil.conversationTargetId(conversation.conversationId) {
+        self.p2pAccountIds.insert(accountId)
+        self.subscribeOnlineStatus([accountId])
+      }
+
+      self.delegate?.reloadTableView()
+      self.refreshConversationNameIfNeeded(conversation)
+    }
+  }
+
+  /// 新建单聊会话时，首次名称可能暂时为账号 ID。查询用户资料后重新绑定会话数据。
+  private func refreshConversationNameIfNeeded(_ conversation: V2NIMLocalConversation) {
+    guard conversation.type == .CONVERSATION_TYPE_P2P,
+          let accountId = V2NIMConversationIdUtil.conversationTargetId(conversation.conversationId),
+          conversation.name == accountId else {
       return
     }
 
-    addOrUpdateConversationData(conversation, true)
+    NEFriendUserCache.shared.loadShowName([accountId]) { [weak self] users in
+      guard let self,
+            users?.contains(where: { $0.user?.accountId == accountId }) == true else {
+        return
+      }
 
-    // 订阅单聊在线状态
-    if IMKitConfigCenter.shared.enableOnlineStatus,
-       let accountId = V2NIMConversationIdUtil.conversationTargetId(conversation.conversationId) {
-      p2pAccountIds.insert(accountId)
-      subscribeOnlineStatus([accountId])
+      self.conversationRepo.getConversationListByIds([conversation.conversationId]) { [weak self] conversations, _ in
+        guard let self,
+              let refreshedConversation = conversations?.first else {
+          return
+        }
+        DispatchQueue.main.async {
+          guard let model = self.conversationDic[refreshedConversation.conversationId] else {
+            return
+          }
+          model.conversation = refreshedConversation
+          self.delegate?.reloadTableView()
+        }
+      }
     }
-
-    delegate?.reloadTableView()
   }
 
   /// 会话变更
   /// - Parameter conversations 会话列表
   open func onLocalConversationChanged(_ conversations: [V2NIMLocalConversation]) {
-    for conversation in conversations {
-      if let manager = NELocalAtMessageManager.instance {
-        if conversation.unreadCount == 0, manager.isAtCurrentUser(conversationId: conversation.conversationId) {
-          NELocalAtMessageManager.instance?.clearAtRecord(conversation.conversationId)
+    executeOnMain { [weak self] in
+      guard let self else { return }
+      for conversation in conversations {
+        if let manager = NELocalAtMessageManager.instance {
+          if conversation.unreadCount == 0, manager.isAtCurrentUser(conversationId: conversation.conversationId) {
+            NELocalAtMessageManager.instance?.clearAtRecord(conversation.conversationId)
+          }
+        }
+
+        if self.checkDismissTeamNoti(conversation) {
+          continue
+        }
+        self.mergeConversationData(conversation)
+      }
+
+      self.delegate?.reloadTableView()
+    }
+  }
+
+  open func onLocalConversationUnreadCountCleared(_ conversationIds: [String]) {
+    DispatchQueue.main.async { [weak self] in
+      guard let self = self else { return }
+      for conversationId in conversationIds {
+        guard let model = self.conversationDic[conversationId] else { continue }
+        model.markUnreadCountCleared()
+        if model.unreadCount == 0 {
+          NELocalAtMessageManager.instance?.clearAtRecord(conversationId)
         }
       }
-
-      if checkDismissTeamNoti(conversation) {
-        continue
-      }
-      addOrUpdateConversationData(conversation)
+      self.delegate?.reloadTableView()
     }
+  }
 
-    delegate?.reloadTableView()
+  /// 多端同步会话已读时间后，按已读时间覆盖 SDK 缓存中的旧未读数。
+  open func onLocalConversationReadTimeUpdated(_ conversationId: String, _ readTime: TimeInterval) {
+    DispatchQueue.main.async { [weak self] in
+      guard let self = self,
+            let model = self.conversationDic[conversationId] else { return }
+      model.markUnreadCountCleared(through: readTime)
+      if model.unreadCount == 0 {
+        NELocalAtMessageManager.instance?.clearAtRecord(conversationId)
+      }
+      self.delegate?.reloadTableView()
+    }
   }
 
   /// 会话删除
   /// - Parameter conversationIds: 会话id列表
   open func onLocalConversationDeleted(_ conversationIds: [String]) {
-    var removeFlagSet = Set<String>()
-    for id in conversationIds {
-      removeFlagSet.insert(id)
-      conversationDic.removeValue(forKey: id)
-    }
-    conversationListData.removeAll(where: {
-      if let sid = $0.conversation?.conversationId, removeFlagSet.contains(sid) {
-        return true
+    executeOnMain { [weak self] in
+      guard let self else { return }
+      var removeFlagSet = Set<String>()
+      for id in conversationIds {
+        removeFlagSet.insert(id)
+        self.conversationDic.removeValue(forKey: id)
       }
-      return false
-    })
-    delegate?.reloadTableView()
+      self.conversationListData.removeAll(where: {
+        if let sid = $0.conversation?.conversationId, removeFlagSet.contains(sid) {
+          return true
+        }
+        return false
+      })
+      self.delegate?.reloadTableView()
+    }
   }
 
   /// 检查会话是否包含解散通知的变更
@@ -391,30 +504,35 @@ open class LocalConversationViewModel: NSObject, NELocalConversationListener, NE
       if let err = error {
         NEALog.infoLog(LocalConversationViewModel.className(), desc: "onTeamDismissed delete conversation error : \(err.localizedDescription)")
       } else {
-        self?.conversationDic.removeValue(forKey: cid)
-        self?.conversationListData.removeAll { model in
-          if model.conversation?.conversationId == cid {
-            return true
+        self?.executeOnMain { [weak self] in
+          guard let self else { return }
+          self.conversationDic.removeValue(forKey: cid)
+          self.conversationListData.removeAll { model in
+            if model.conversation?.conversationId == cid {
+              return true
+            }
+            return false
           }
-          return false
+          self.delegate?.reloadTableView()
         }
-        self?.delegate?.reloadTableView()
       }
     }
   }
 
   open func onLocalConversationSyncFinished() {
-    NEALog.infoLog(className() + "[Performance]", desc: #function + " timestamp: \(Date().timeIntervalSince1970)")
-    /// 设置同步完成标识
-    syncFinished = true
+    executeOnMain { [weak self] in
+      guard let self else { return }
+      NEALog.infoLog(self.className() + "[Performance]", desc: #function + " timestamp: \(Date().timeIntervalSince1970)")
+      /// 设置同步完成标识
+      self.syncFinished = true
 
-    if let completion = callBack {
-      NEALog.infoLog(className() + "[Performance]", desc: #function + " getConversationListByPage again")
-      /// 取数据
-
-      getConversationListByPage(completion)
-      /// 回调置空
-      callBack = nil
+      if let completion = self.callBack {
+        NEALog.infoLog(self.className() + "[Performance]", desc: #function + " getConversationListByPage again")
+        /// 取数据
+        self.getConversationListByPage(completion)
+        /// 回调置空
+        self.callBack = nil
+      }
     }
   }
 
@@ -442,13 +560,22 @@ open class LocalConversationViewModel: NSObject, NELocalConversationListener, NE
   open func onLoginStatus(_ status: V2NIMLoginStatus) {
     // 账号切换（退出登录）时清空在线状态缓存，防止旧账号的离线状态数据污染新账号的会话列表
     if status == .LOGIN_STATUS_LOGOUT {
-      p2pAccountIds.removeAll()
-      onlineStatusDic.removeAll()
+      executeOnMain { [weak self] in
+        self?.p2pAccountIds.removeAll()
+        self?.onlineStatusDic.removeAll()
+      }
     }
   }
 
   /// 发生重连的情况重新获取数据
   open func retrieveConversationDatas() {
+    guard Thread.isMainThread else {
+      DispatchQueue.main.async { [weak self] in
+        self?.retrieveConversationDatas()
+      }
+      return
+    }
+
     var limit = 0
     if conversationDic.count > page {
       limit = conversationDic.count
@@ -456,21 +583,24 @@ open class LocalConversationViewModel: NSObject, NELocalConversationListener, NE
       limit = page
     }
     conversationRepo.getConversationList(0, limit) { [weak self] conversations, offset, finished, error in
-      if error == nil {
-        if let set = offset {
-          // 更新索引
-          self?.offset = set
-        }
-        // 清理之前数据
-        self?.conversationListData.removeAll()
-        self?.conversationDic.removeAll()
-        // 区分置顶消息和非置顶消息
-        conversations?.forEach { conversation in
-          self?.addOrUpdateConversationData(conversation)
-        }
-        self?.delegate?.reloadTableView()
-        if let complete = finished {
-          self?.delegate?.loadMoreStateChange(complete)
+      guard let self else { return }
+      DispatchQueue.main.async {
+        if error == nil {
+          if let set = offset {
+            // 更新索引
+            self.offset = set
+          }
+          // 清理之前数据
+          self.conversationListData.removeAll()
+          self.conversationDic.removeAll()
+          // 会话列表统一按 sortOrder 降序插入。
+          conversations?.forEach { conversation in
+            self.mergeConversationData(conversation)
+          }
+          self.delegate?.reloadTableView()
+          if let complete = finished {
+            self.delegate?.loadMoreStateChange(complete)
+          }
         }
       }
     }
@@ -540,7 +670,7 @@ extension LocalConversationViewModel: NESubscribeListener {
       // 普通用户和机器人均走正常订阅流程
       if let event = NESubscribeManager.shared.getSubscribeStatus(accountId),
          let conversationId = V2NIMConversationIdUtil.p2pConversationId(accountId) {
-        onlineStatusDic[conversationId] = event.statusType == .USER_STATUS_TYPE_LOGIN
+        onlineStatusDic[conversationId] = NESubscribeManager.isOnline(event)
       } else {
         subscribeList.append(accountId)
       }
@@ -567,7 +697,7 @@ extension LocalConversationViewModel: NESubscribeListener {
       // 遍历所有状态变更，不能 break，否则一批事件中只处理第一条
       if p2pAccountIds.contains(d.accountId),
          let conversationId = V2NIMConversationIdUtil.p2pConversationId(d.accountId) {
-        onlineStatusDic[conversationId] = d.statusType == .USER_STATUS_TYPE_LOGIN
+        onlineStatusDic[conversationId] = NESubscribeManager.isOnline(d)
         needRefresh = true
       }
     }

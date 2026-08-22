@@ -2,8 +2,8 @@
 // Use of this source code is governed by a MIT license that can be
 // found in the LICENSE file.
 
-import NECommonUIKit
-import NECoreKit
+import NEChatKit
+import NEBaseUIKit
 import NIMSDK
 import UIKit
 
@@ -21,7 +21,7 @@ open class FunConversationController: NEBaseConversationController {
 
   override public init(nibName nibNameOrNil: String?, bundle nibBundleOrNil: Bundle?) {
     super.init(nibName: nibNameOrNil, bundle: nibBundleOrNil)
-    className = "FunConversationController"
+    logClassName = "FunConversationController"
     deleteButtonBackgroundColor = .funConversationDeleteActionColor
     topButtonBackgroundColor = .funConversationTopActionColor
     cellRegisterDic = [0: FunConversationListCell.self]
@@ -31,6 +31,10 @@ open class FunConversationController: NEBaseConversationController {
     brokenNetworkView.backgroundColor = .funConversationNetworkBrokenBackgroundColor
     brokenNetworkView.contentLabel.textColor = .funConversationNetworkBrokenTitleColor
     emptyView.setEmptyImage(name: "fun_user_empty")
+  }
+
+  override var conversationGroupUIStyle: NEConversationGroupUIStyle {
+    .fun
   }
 
   public required init?(coder: NSCoder) {
@@ -59,6 +63,7 @@ open class FunConversationController: NEBaseConversationController {
   }
 
   open func changeLanguage() {
+    conversationGroupViewModel.refreshLocalizedDefaultGroupNames()
     requestData()
     initSystemNav()
     popListView = FunPopListView()

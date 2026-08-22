@@ -4,8 +4,6 @@
 // found in the LICENSE file.
 
 import NEChatKit
-import NECoreIM2Kit
-import NECoreKit
 import NIMSDK
 import UIKit
 
@@ -525,7 +523,7 @@ open class NEBaseChatMessageCell: NEChatBaseCell {
           if model.readCount + model.unreadCount != 0 {
             total = model.readCount + model.unreadCount + 1
           }
-          if total >= ChatUIConfig.shared.maxReadingNum {
+          if total > ChatUIConfig.shared.maxReadingNum {
             readView.isHidden = true
           } else {
             if total - 1 > 0 {

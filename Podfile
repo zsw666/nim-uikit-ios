@@ -36,7 +36,7 @@ target 'app' do
   pod 'ZLPhotoBrowser'
 
   # 如果需要查看UI部分源码请注释掉以上在线依赖(不包含呼叫组件)，打开下面的本地依赖
-#  pod 'NECommonUIKit', :path => 'NECommonUIKit/NECommonUIKit.podspec'
+#  pod 'NEBaseUIKit', :path => 'NEBaseUIKit/NEBaseUIKit.podspec'
 #  pod 'NEChatUIKit', :path => 'NEChatUIKit/NEChatUIKit.podspec'
 #  pod 'NEContactUIKit', :path => 'NEContactUIKit/NEContactUIKit.podspec'
 #  pod 'NEConversationUIKit', :path => 'NEConversationUIKit/NEConversationUIKit.podspec'
@@ -52,9 +52,6 @@ post_install do |installer|
     target.build_configurations.each do |config|
       config.build_settings['BUILD_LIBRARY_FOR_DISTRIBUTION'] = 'YES'
       config.build_settings['IPHONEOS_DEPLOYMENT_TARGET'] = YXConfig.deployment_target
-      
-      # Apple 芯片模拟器运行打开以下代码
-#      config.build_settings["EXCLUDED_ARCHS[sdk=iphonesimulator*]"] = "arm64"
     end
   end
 end

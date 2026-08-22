@@ -4,14 +4,13 @@
 // found in the LICENSE file.
 
 import NEChatKit
-import NECoreIM2Kit
 import UIKit
 
 @objcMembers
 open class FunSelectUserViewController: NEBaseSelectUserViewController {
   override public init(conversationId: String, showSelf: Bool = true, showTeamMembers: Bool = false) {
     super.init(conversationId: conversationId, showSelf: showSelf, showTeamMembers: showTeamMembers)
-    className = "FunSelectUserViewController"
+    logClassName = "FunSelectUserViewController"
   }
 
   public required init?(coder: NSCoder) {

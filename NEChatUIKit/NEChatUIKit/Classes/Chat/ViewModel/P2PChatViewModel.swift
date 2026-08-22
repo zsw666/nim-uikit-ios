@@ -5,7 +5,6 @@
 import CoreText
 import Foundation
 import NEChatKit
-import NECoreIM2Kit
 import NIMSDK
 
 @objcMembers
@@ -234,7 +233,7 @@ extension P2PChatViewModel: NESubscribeListener {
     }
 
     if let event = NESubscribeManager.shared.getSubscribeStatus(ChatRepo.sessionId) {
-      online = event.statusType == .USER_STATUS_TYPE_LOGIN
+      online = NESubscribeManager.isOnline(event)
       return
     }
 
@@ -253,7 +252,7 @@ extension P2PChatViewModel: NESubscribeListener {
   public func onUserStatusChanged(_ data: [V2NIMUserStatus]) {
     for d in data {
       if d.accountId == ChatRepo.sessionId {
-        online = d.statusType == .USER_STATUS_TYPE_LOGIN
+        online = NESubscribeManager.isOnline(d)
         delegate?.remoteUserOnlineChanged()
         break
       }

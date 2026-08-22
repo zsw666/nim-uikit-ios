@@ -4,7 +4,7 @@
 // found in the LICENSE file.
 
 import Foundation
-import NECommonKit
+import NEChatKit
 
 let localConversationCoreLoader = CommonLoader<NEBaseLocalConversationController>()
 func localizable(_ key: String) -> String {

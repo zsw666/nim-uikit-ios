@@ -4,8 +4,10 @@
 // found in the LICENSE file.
 
 import Foundation
+import NEChatKit
 
 open class ReplyMessageUtil: NSObject {
+  @nonobjc
   public static func textForReplyModel(model: MessageContentModel) -> String {
     var text = ""
     if let name = model.fullName {
@@ -22,5 +24,15 @@ open class ReplyMessageUtil: NSObject {
     }
 
     return text
+  }
+
+  @objc(textForReplyModel:)
+  public static func objc_textForReplyModel(_ model: MessageContentModel) -> String {
+    textForReplyModel(model: model)
+  }
+
+  @objc(textForReplyModelWithModel:)
+  public static func objc_textForReplyModel(withModel model: MessageContentModel) -> String {
+    textForReplyModel(model: model)
   }
 }

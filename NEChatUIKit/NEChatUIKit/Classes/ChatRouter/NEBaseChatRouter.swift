@@ -5,7 +5,6 @@
 
 import Foundation
 import NEChatKit
-import NECommonKit
 
 @objcMembers
 open class ChatRouter: NSObject {

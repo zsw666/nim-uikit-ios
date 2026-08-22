@@ -4,7 +4,6 @@
 
 import MJRefresh
 import NEChatKit
-import NECoreIM2Kit
 import NIMSDK
 import UIKit
 
@@ -70,6 +69,14 @@ open class NEBaseCollectionMessageController: NEChatBaseViewController, UITableV
     super.init(coder: coder)
   }
 
+  deinit {
+    NotificationCenter.default.removeObserver(
+      self,
+      name: UIApplication.didEnterBackgroundNotification,
+      object: nil
+    )
+  }
+
   override open func viewWillAppear(_ animated: Bool) {
     super.viewWillAppear(animated)
     contentTableTopAnchor?.constant = topConstant
@@ -84,8 +91,19 @@ open class NEBaseCollectionMessageController: NEChatBaseViewController, UITableV
     super.viewDidLoad()
 
     // Do any additional setup after loading the view.
+    NotificationCenter.default.addObserver(
+      self,
+      selector: #selector(appEnterBackground),
+      name: UIApplication.didEnterBackgroundNotification,
+      object: nil
+    )
     setupUI()
     loadMoreData()
+  }
+
+  @objc open func appEnterBackground() {
+    viewModel.lastClickAuidoMessageId = nil
+    stopPlay()
   }
 
   /// 加载数据
@@ -605,11 +623,12 @@ open class NEBaseCollectionMessageController: NEChatBaseViewController, UITableV
   /// - Parameter cell: 收藏列表视图对象
   /// - Parameter model: 收藏对象
   public func didPlay(cell: NEBaseCollectionMessageCell?, model: CollectionMessageModel?) {
-    guard let message = model?.message, let audio = message.attachment as? V2NIMMessageAudioAttachment, let messageId = message.messageServerId else {
+    guard let message = model?.message, let audio = message.attachment as? V2NIMMessageAudioAttachment else {
       return
     }
 
-    let path = audio.path ?? ChatMessageHelper.createFilePath(message)
+    let path = audioFilePath(message, audio)
+    let messageId = message.messageServerId ?? message.messageClientId ?? path
     if !FileManager.default.fileExists(atPath: path) {
       if let urlString = audio.url {
         if viewModel.audioDownloadSet.contains(messageId) {
@@ -670,7 +689,7 @@ open class NEBaseCollectionMessageController: NEChatBaseViewController, UITableV
 
     playingCell?.startPlayAnimation()
 
-    let path = audio.path ?? ChatMessageHelper.createFilePath(message)
+    let path = audioFilePath(message, audio)
     if FileManager.default.fileExists(atPath: path) {
       NEALog.infoLog(className(), desc: #function + " play path : " + path)
 
@@ -701,13 +720,21 @@ open class NEBaseCollectionMessageController: NEChatBaseViewController, UITableV
     }
   }
 
-  func stopPlay() {
-    if audioPlayer?.isPlaying == true {
-      audioPlayer?.stop()
+  private func audioFilePath(_ message: V2NIMMessage, _ audio: V2NIMMessageAudioAttachment) -> String {
+    if let path = audio.path, FileManager.default.fileExists(atPath: path) {
+      return path
     }
+    return ChatMessageHelper.createFilePath(message)
+  }
+
+  func stopPlay() {
+    audioPlayer?.stop()
+    audioPlayer = nil
 
     playingCell?.stopPlayAnimation()
     playingModel?.isPlaying = false
+    playingCell = nil
+    playingModel = nil
 
     NEAudioSessionManager.shared.stopProximityMonitoring()
   }

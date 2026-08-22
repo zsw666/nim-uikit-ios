@@ -2,7 +2,7 @@
 // Use of this source code is governed by a MIT license that can be
 // found in the LICENSE file.
 
-import NECoreIM2Kit
+import NEChatKit
 import UIKit
 
 @objcMembers
@@ -64,7 +64,7 @@ open class NEBaseFusionContactSelectedCell: UITableViewCell {
       nameLabel.text = model.user?.showName()
 
       let url = model.user?.user?.avatar
-      let name = model.user?.shortName() ?? ""
+      let name = model.user?.shortName(showAlias: false) ?? ""
       let accountId = model.user?.user?.accountId ?? ""
       userHeaderView.configHeadData(headUrl: url, name: name, uid: accountId)
     } else if model.aiUser != nil {

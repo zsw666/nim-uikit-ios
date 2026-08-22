@@ -4,7 +4,7 @@
 // found in the LICENSE file.
 
 import Foundation
-import NECommonKit
+import NEChatKit
 
 public extension Bundle {
   class func nim_defaultEmojiBundle() -> Bundle? {

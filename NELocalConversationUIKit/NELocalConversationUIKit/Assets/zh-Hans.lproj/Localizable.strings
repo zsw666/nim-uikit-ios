@@ -34,6 +34,7 @@
 "message_recalled"="此消息已撤回";
 
 "you_were_mentioned"="[有人@我]";
+"bot_sub_session_prefix"="[子会话] ";
 
 // error toast
 
@@ -45,4 +46,3 @@
 "scan_qr_no_camera_permission"="请在设置中开启相机权限";
 "scan_qr_fail"="扫码失败，请重试";
 "qr_code_expired"="二维码已过期";
-

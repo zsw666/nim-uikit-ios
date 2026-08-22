@@ -3,8 +3,8 @@
 // found in the LICENSE file.
 
 import Foundation
+import NEChatKit
 import NEChatUIKit
-import NECoreKit
 
 let mapCoreLoader = MapCoreLoader()
 func mapLocalizable(_ key: String) -> String {

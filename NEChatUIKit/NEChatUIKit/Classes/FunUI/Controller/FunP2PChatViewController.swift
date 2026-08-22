@@ -71,7 +71,7 @@ open class FunP2PChatViewController: FunChatViewController {
   override open func commonUI() {
     super.commonUI()
     if IMKitConfigCenter.shared.enableAIChatHelper {
-      chatInputView.aiChatViewController.loadDataView.animation = .named("fun_ai_chat_loading", bundle: chatCoreLoader.bundle)
+      chatInputView.aiChatViewController.loadDataView.animation = .named("fun_ai_chat_loading", bundle: chatUIKitLoader.bundle)
       chatInputView.aiChatViewController.titleIcon.image = UIImage.ne_imageNamed(name: "fun_ai_icon_highlight")
     }
   }

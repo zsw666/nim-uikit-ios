@@ -4,14 +4,12 @@
 
 import Foundation
 import NEChatKit
-import NECoreIM2Kit
-import NECoreKit
 
 @objcMembers
 open class TeamListViewModel: NSObject, NETeamListener {
   var teamRepo = TeamRepo.shared
   var refresh: () -> Void = {}
-  public var teamList = [NETeam]()
+  public var teamList = [V2NIMTeam]()
 
   override public init() {
     super.init()
@@ -22,7 +20,7 @@ open class TeamListViewModel: NSObject, NETeamListener {
     teamRepo.removeTeamListener(self)
   }
 
-  open func getTeamList(_ completion: @escaping ([NETeam]?, Error?) -> Void) {
+  open func getTeamList(_ completion: @escaping ([V2NIMTeam]?, Error?) -> Void) {
     NEALog.infoLog(ModuleName + " " + className(), desc: #function)
     teamRepo.getTeamList { [weak self] teams, error in
       if let error = error {
@@ -30,7 +28,7 @@ open class TeamListViewModel: NSObject, NETeamListener {
       } else if let teams = teams {
         self?.teamList = teams
         self?.teamList.sort(by: { team1, team2 in
-          (team1.createTime ?? 0) > (team2.createTime ?? 0)
+          team1.createTime > team2.createTime
         })
         completion(teams, nil)
       }
@@ -40,14 +38,14 @@ open class TeamListViewModel: NSObject, NETeamListener {
   // MARK: NIMTeamManagerDelegate
 
   open func onTeamAdded(_ team: V2NIMTeam) {
-    teamList.insert(NETeam(v2teamInfo: team), at: 0)
+    teamList.insert(team, at: 0)
     refresh()
   }
 
   open func onTeamUpdated(_ team: V2NIMTeam) {
     for (i, t) in teamList.enumerated() {
-      if t.teamId == team.teamId {
-        teamList[i] = NETeam(v2teamInfo: team)
+      if t.teamId == team.teamId, t.teamType == team.teamType {
+        teamList[i] = team
         refresh()
         break
       }
@@ -56,7 +54,7 @@ open class TeamListViewModel: NSObject, NETeamListener {
 
   open func onTeamRemoved(_ team: V2NIMTeam) {
     for (i, t) in teamList.enumerated() {
-      if t.teamId == team.teamId {
+      if t.teamId == team.teamId, t.teamType == team.teamType {
         teamList.remove(at: i)
         refresh()
         break

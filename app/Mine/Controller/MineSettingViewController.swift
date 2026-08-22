@@ -3,8 +3,8 @@
 // Use of this source code is governed by a MIT license that can be
 // found in the LICENSE file.
 
-import NECoreIM2Kit
-import NECoreKit
+import NEChatKit
+import NEBaseUIKit
 import NETeamUIKit
 import NIMSDK
 import UIKit
@@ -134,7 +134,7 @@ class MineSettingViewController: NEBaseViewController, UITableViewDataSource, UI
         weakSelf?.logoutButton.isEnabled = true
         if error != nil {
           NEALog.infoLog(weakSelf?.className() ?? "", desc: "logout im  error : \(error?.localizedDescription ?? "")")
-          weakSelf?.view.ne_makeToast(error?.localizedDescription)
+          weakSelf?.view.neMakeToast(error?.localizedDescription)
         } else {
           NEALog.infoLog(weakSelf?.className() ?? "", desc: "logout im  success ")
           NotificationCenter.default.post(

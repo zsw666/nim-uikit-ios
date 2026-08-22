@@ -4,8 +4,6 @@
 
 import NEChatKit
 import NEChatUIKit
-import NECommonKit
-import NECoreKit
 import UIKit
 
 @objcMembers
@@ -39,8 +37,8 @@ open class NELocationViewController: UIViewController, NELocationBottomViewDeleg
   lazy var backButton: UIButton = {
     let button = UIButton()
     button.translatesAutoresizingMaskIntoConstraints = false
-    button.setImage(chatCoreLoader.loadImage("chat_map_back"), for: .normal)
-    button.setImage(chatCoreLoader.loadImage("chat_map_back"), for: .highlighted)
+    button.setImage(chatUIKitLoader.loadImage("chat_map_back"), for: .normal)
+    button.setImage(chatUIKitLoader.loadImage("chat_map_back"), for: .highlighted)
     button.addTarget(self, action: #selector(backBackClick), for: .touchUpInside)
     return button
   }()
@@ -61,8 +59,8 @@ open class NELocationViewController: UIViewController, NELocationBottomViewDeleg
   lazy var resetButton: ExpandButton = {
     let button = ExpandButton()
     button.translatesAutoresizingMaskIntoConstraints = false
-    button.setImage(chatCoreLoader.loadImage("map_reset_normal"), for: .normal)
-    button.setImage(chatCoreLoader.loadImage("map_reset_select"), for: .selected)
+    button.setImage(chatUIKitLoader.loadImage("map_reset_normal"), for: .normal)
+    button.setImage(chatUIKitLoader.loadImage("map_reset_select"), for: .selected)
     button.addTarget(self, action: #selector(resetClick), for: .touchUpInside)
     return button
   }()
@@ -92,7 +90,7 @@ open class NELocationViewController: UIViewController, NELocationBottomViewDeleg
   public lazy var emptyImageView: UIImageView = {
     let imageView = UIImageView()
     imageView.translatesAutoresizingMaskIntoConstraints = false
-    imageView.image = chatCoreLoader.loadImage("chat_map_empty")
+    imageView.image = chatUIKitLoader.loadImage("chat_map_empty")
     imageView.isHidden = true
     return imageView
   }()
@@ -162,7 +160,7 @@ open class NELocationViewController: UIViewController, NELocationBottomViewDeleg
   public lazy var pointImage: UIImageView = {
     let pointImage = UIImageView()
     pointImage.translatesAutoresizingMaskIntoConstraints = false
-    pointImage.image = chatCoreLoader.loadImage("location_point")
+    pointImage.image = chatUIKitLoader.loadImage("location_point")
     return pointImage
   }()
 
@@ -237,7 +235,7 @@ open class NELocationViewController: UIViewController, NELocationBottomViewDeleg
     }
 
     if mapType == .detail {
-      NEMapClient.shared().setCustomAnnotationWith(chatCoreLoader.loadImage("location_point"), lat: currentPoint.x, lng: currentPoint.y)
+      NEMapClient.shared().setCustomAnnotationWith(chatUIKitLoader.loadImage("location_point"), lat: currentPoint.x, lng: currentPoint.y)
       addDetailSubviews()
     } else {
       NEMapClient.shared().setCustomAnnotationWith(nil, lat: 0, lng: 0)

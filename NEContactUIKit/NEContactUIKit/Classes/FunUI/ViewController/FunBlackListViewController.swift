@@ -3,9 +3,7 @@
 // Use of this source code is governed by a MIT license that can be
 // found in the LICENSE file.
 
-import NECommonKit
-import NECoreIM2Kit
-import NECoreKit
+import NEChatKit
 import UIKit
 
 @objcMembers
@@ -20,6 +18,7 @@ open class FunBlackListViewController: NEBaseBlackListViewController {
 
   override open func commonUI() {
     super.commonUI()
+    emptyView.setEmptyImage(name: "fun_user_empty")
     tableView.register(
       FunBlackListCell.self,
       forCellReuseIdentifier: "\(NSStringFromClass(FunBlackListCell.self))"

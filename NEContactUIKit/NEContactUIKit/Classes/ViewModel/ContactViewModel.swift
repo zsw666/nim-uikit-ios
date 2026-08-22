@@ -4,8 +4,6 @@
 
 import Foundation
 import NEChatKit
-import NECoreIM2Kit
-import NECoreKit
 import UIKit
 
 @objc
@@ -345,7 +343,7 @@ extension ContactViewModel: NESubscribeListener {
       for contact in section.contacts {
         if let accountId = contact.user?.user?.accountId {
           if let event = NESubscribeManager.shared.getSubscribeStatus(accountId) {
-            onlineStatusDic[accountId] = event.statusType == .USER_STATUS_TYPE_LOGIN
+            onlineStatusDic[accountId] = NESubscribeManager.isOnline(event)
           } else {
             subscribeList.append(accountId)
           }
@@ -380,7 +378,7 @@ extension ContactViewModel: NESubscribeListener {
     var needRefresh = false
     for d in data {
       if NEFriendUserCache.shared.isFriend(d.accountId) {
-        onlineStatusDic[d.accountId] = d.statusType == .USER_STATUS_TYPE_LOGIN
+        onlineStatusDic[d.accountId] = NESubscribeManager.isOnline(d)
         needRefresh = true
         break
       }

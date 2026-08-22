@@ -40,8 +40,38 @@
 "message_recalled"="此消息已撤回";
 
 "you_were_mentioned"="[有人@我]";
+"bot_sub_session_prefix"="[子会话] ";
 
 // error toast
 
 "leave_team_desc"="您已被移出群聊或该群聊已被解散";
-
+"conversation_group_title"="会话分组";
+"conversation_group_all"="全部";
+"conversation_group_at_me"="@我";
+"conversation_group_unread"="未读";
+"conversation_group_common"="常用分组";
+"conversation_group_hidden"="隐藏分组";
+"conversation_group_create"="新建分组";
+"conversation_group_setting_title"="分组设置";
+"conversation_group_name"="分组名称";
+"conversation_group_edit_name"="修改分组名称";
+"conversation_group_add_member"="添加会话";
+"conversation_group_add_title"="添加会话(%d/%d)";
+"conversation_group_members"="会话列表(%ld)";
+"conversation_group_name_placeholder"="设置分组名称";
+"conversation_group_name_empty"="请输入分组名称";
+"conversation_group_delete_title"="删除分组？";
+"conversation_group_delete_message"="删除分组不会删除分组内的会话。";
+"conversation_group_belonged_limit"="会话所属分组数量超限";
+"conversation_group_conversation_not_exist"="会话不存在";
+"conversation_group_not_exist"="会话分组不存在";
+"conversation_group_limit"="会话分组超限";
+"conversation_group_members_limit"="分组会话数量超限";
+"conversation_group_add_failed"="添加失败";
+"conversation_group_add_partial_failed"="部分会话添加失败";
+"conversation_group_search_hint"="请输入你需要搜索的会话";
+"cancel"="取消";
+"save"="保存";
+"confirm"="确定";
+"remove"="移除";
+"search"="搜索";

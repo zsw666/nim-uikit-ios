@@ -17,11 +17,11 @@ open class FunChatMessageTextCell: FunChatMessageBaseCell {
   public lazy var translationTextLeft: UILabel = .init()
   public lazy var translationTextRight: UILabel = .init()
 
-  // 译文气泡 top 约束（根据有无回复动态切换锚点）
-  private var translationBubbleLeftTopToBubble: NSLayoutConstraint?
-  private var translationBubbleLeftTopToReply: NSLayoutConstraint?
-  private var translationBubbleRightTopToBubble: NSLayoutConstraint?
-  private var translationBubbleRightTopToReply: NSLayoutConstraint?
+  // 同时存在回复和译文时，布局顺序为：原文 -> 译文 -> 回复。
+  private var replyViewLeftTopToBubble: NSLayoutConstraint?
+  private var replyViewLeftTopToTranslation: NSLayoutConstraint?
+  private var replyViewRightTopToBubble: NSLayoutConstraint?
+  private var replyViewRightTopToTranslation: NSLayoutConstraint?
 
   private func makeTranslationBubble(isSend: Bool) -> UIView {
     let bubble = UIView()
@@ -46,7 +46,7 @@ open class FunChatMessageTextCell: FunChatMessageBaseCell {
     let footerView = UIView()
     footerView.translatesAutoresizingMaskIntoConstraints = false
 
-    let iconView = UIImageView(image: chatCoreLoader.loadImage("chat_translation"))
+    let iconView = UIImageView(image: chatUIKitLoader.loadImage("chat_translation"))
     iconView.translatesAutoresizingMaskIntoConstraints = false
     iconView.contentMode = .scaleAspectFit
 
@@ -168,21 +168,24 @@ open class FunChatMessageTextCell: FunChatMessageBaseCell {
       contentLabelLeft.topAnchor.constraint(equalTo: bubbleImageLeft.topAnchor, constant: chat_content_margin),
       contentLabelLeft.bottomAnchor.constraint(equalTo: bubbleImageLeft.bottomAnchor, constant: -chat_content_margin),
     ])
-    // 译文气泡：预先创建两条 top 约束，setModel 时激活其中一条
+    // 回复视图默认挂在原文气泡下方；有译文时切换到译文气泡下方。
+    deactivateTopConstraints(for: replyViewLeft)
+    replyViewLeftTopToBubble = replyViewLeft.topAnchor.constraint(
+      equalTo: bubbleImageLeft.bottomAnchor, constant: 0
+    )
+    replyViewLeftTopToTranslation = replyViewLeft.topAnchor.constraint(
+      equalTo: translationBubbleLeft.bottomAnchor, constant: 0
+    )
+
+    // 译文气泡始终展示在原文气泡下方。
     contentView.addSubview(translationBubbleLeft)
-    translationBubbleLeftTopToBubble = translationBubbleLeft.topAnchor.constraint(
-      equalTo: bubbleImageLeft.bottomAnchor, constant: 4
-    )
-    translationBubbleLeftTopToReply = translationBubbleLeft.topAnchor.constraint(
-      equalTo: replyViewLeft.bottomAnchor, constant: 4
-    )
     NSLayoutConstraint.activate([
+      replyViewLeftTopToBubble!,
+      translationBubbleLeft.topAnchor.constraint(equalTo: bubbleImageLeft.bottomAnchor, constant: 4),
       translationBubbleLeft.leftAnchor.constraint(equalTo: bubbleImageLeft.leftAnchor, constant: funMargin),
       translationBubbleLeft.widthAnchor.constraint(lessThanOrEqualToConstant: chat_content_maxW - funMargin),
       translationBubbleLeft.widthAnchor.constraint(greaterThanOrEqualToConstant: translationBubbleMinWidth),
     ])
-    // 默认使用 bubbleImage.bottom（无回复时）
-    translationBubbleLeftTopToBubble?.isActive = true
   }
 
   override open func commonUIRight() {
@@ -194,21 +197,30 @@ open class FunChatMessageTextCell: FunChatMessageBaseCell {
       contentLabelRight.topAnchor.constraint(equalTo: bubbleImageRight.topAnchor, constant: chat_content_margin),
       contentLabelRight.bottomAnchor.constraint(equalTo: bubbleImageRight.bottomAnchor, constant: -chat_content_margin),
     ])
-    // 译文气泡：预先创建两条 top 约束
+    // 回复视图默认挂在原文气泡下方；有译文时切换到译文气泡下方。
+    deactivateTopConstraints(for: replyViewRight)
+    replyViewRightTopToBubble = replyViewRight.topAnchor.constraint(
+      equalTo: bubbleImageRight.bottomAnchor, constant: 0
+    )
+    replyViewRightTopToTranslation = replyViewRight.topAnchor.constraint(
+      equalTo: translationBubbleRight.bottomAnchor, constant: 0
+    )
+
+    // 译文气泡始终展示在原文气泡下方。
     contentView.addSubview(translationBubbleRight)
-    translationBubbleRightTopToBubble = translationBubbleRight.topAnchor.constraint(
-      equalTo: bubbleImageRight.bottomAnchor, constant: 4
-    )
-    translationBubbleRightTopToReply = translationBubbleRight.topAnchor.constraint(
-      equalTo: replyViewRight.bottomAnchor, constant: 4
-    )
     NSLayoutConstraint.activate([
+      replyViewRightTopToBubble!,
+      translationBubbleRight.topAnchor.constraint(equalTo: bubbleImageRight.bottomAnchor, constant: 4),
       translationBubbleRight.rightAnchor.constraint(equalTo: bubbleImageRight.rightAnchor, constant: -funMargin),
       translationBubbleRight.widthAnchor.constraint(lessThanOrEqualToConstant: chat_content_maxW - funMargin),
       translationBubbleRight.widthAnchor.constraint(greaterThanOrEqualToConstant: translationBubbleMinWidth),
     ])
-    // 默认使用 bubbleImage.bottom（无回复时）
-    translationBubbleRightTopToBubble?.isActive = true
+  }
+
+  private func deactivateTopConstraints(for view: UIView) {
+    contentView.constraints
+      .filter { ($0.firstItem as AnyObject?) === view && $0.firstAttribute == .top }
+      .forEach { $0.isActive = false }
   }
 
   override open func showLeftOrRight(showRight: Bool) {
@@ -258,7 +270,8 @@ open class FunChatMessageTextCell: FunChatMessageBaseCell {
     let textLabel = isSend ? translationTextRight : translationTextLeft
     let hasTranslation = model.translationInfo != nil &&
       !(model.translationInfo?.translatedText.isEmpty ?? true) &&
-      model.translationVisible
+      model.translationVisible &&
+      !model.inMultiForward
     if hasTranslation {
       textLabel.text = model.translationInfo?.translatedText
       bubble.isHidden = false
@@ -273,6 +286,7 @@ open class FunChatMessageTextCell: FunChatMessageBaseCell {
 
     let contentLabel = isSend ? contentLabelRight : contentLabelLeft
     let bubbleW = isSend ? bubbleWRight : bubbleWLeft
+    let hasTranslation = (model as? MessageTextModel).map { hasVisibleTranslation($0) } ?? false
 
     if let m = model as? MessageTextModel {
       contentLabel.attributedText = m.attributeStr
@@ -282,18 +296,30 @@ open class FunChatMessageTextCell: FunChatMessageBaseCell {
     }
     bubbleW?.constant += funMargin
 
-    // 根据是否有回复内容切换译文气泡的 top 锚点
-    updateTranslationBubbleTopConstraint(isSend: isSend, isReply: model.isReply)
+    updateMessageSupplementTopConstraints(
+      isSend: isSend,
+      isReply: model.isReply,
+      hasTranslation: hasTranslation
+    )
   }
 
-  /// 有回复时 top 挂 replyView.bottom，无回复时 top 挂 bubbleImage.bottom
-  private func updateTranslationBubbleTopConstraint(isSend: Bool, isReply: Bool) {
+  private func hasVisibleTranslation(_ model: MessageTextModel) -> Bool {
+    model.translationInfo != nil &&
+      !(model.translationInfo?.translatedText.isEmpty ?? true) &&
+      model.translationVisible &&
+      !model.inMultiForward
+  }
+
+  /// 同时存在回复和译文时按“原文 -> 译文 -> 回复”排列。
+  private func updateMessageSupplementTopConstraints(isSend: Bool,
+                                                     isReply: Bool,
+                                                     hasTranslation: Bool) {
     if isSend {
-      translationBubbleRightTopToBubble?.isActive = !isReply
-      translationBubbleRightTopToReply?.isActive = isReply
+      replyViewRightTopToBubble?.isActive = !isReply || !hasTranslation
+      replyViewRightTopToTranslation?.isActive = isReply && hasTranslation
     } else {
-      translationBubbleLeftTopToBubble?.isActive = !isReply
-      translationBubbleLeftTopToReply?.isActive = isReply
+      replyViewLeftTopToBubble?.isActive = !isReply || !hasTranslation
+      replyViewLeftTopToTranslation?.isActive = isReply && hasTranslation
     }
   }
 }

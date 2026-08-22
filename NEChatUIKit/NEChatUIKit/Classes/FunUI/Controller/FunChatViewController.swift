@@ -3,7 +3,6 @@
 // found in the LICENSE file.
 
 import NEChatKit
-import NECommonKit
 import NIMSDK
 import UIKit
 
@@ -467,17 +466,26 @@ open class FunChatViewController: ChatViewController, FunChatInputViewDelegate, 
 
   /// 翻译成功后将气泡高度加入 model.height，再刷新 cell
   override open func translateMessage() {
-    if NEChatDetectNetworkTool.shareInstance.manager?.isReachable == false {
+    guard let textModel = viewModel.operationModel as? MessageTextModel else { return }
+
+    // 已有当前目标语言的译文时直接展示缓存，断网也不应阻止本地操作。
+    let targetLanguage = IMKitConfigCenter.shared.translationTargetLanguage
+    let hasCachedTranslation = textModel.translationInfo?.targetLanguage == targetLanguage &&
+      !(textModel.translationInfo?.translatedText.isEmpty ?? true)
+    if !hasCachedTranslation,
+       NEChatDetectNetworkTool.shareInstance.manager?.isReachable == false {
       showToast(commonLocalizable("network_error"))
       return
     }
-    guard let textModel = viewModel.operationModel as? MessageTextModel else { return }
+
     viewModel.performTranslation(model: textModel) { [weak self] index, error in
       guard let self = self else { return }
       if error != nil {
         self.showToast(chatLocalizable("chat_translate_failed"))
         return
       }
+      let indexPath = index >= 0 ? IndexPath(row: index, section: 0) : nil
+      let scrollTarget = indexPath.flatMap { self.translationScrollTarget(for: $0) }
       // 先还原旧译文高度（语言切换后高度可能不同）
       if textModel.addedTranslationHeight > 0 {
         textModel.height -= textModel.addedTranslationHeight
@@ -489,7 +497,10 @@ open class FunChatViewController: ChatViewController, FunChatInputViewDelegate, 
         textModel.addedTranslationHeight = bubbleH
       }
       if index >= 0 {
-        self.tableViewReloadIndexs([IndexPath(row: index, section: 0)])
+        guard let indexPath = indexPath else { return }
+        self.tableViewReloadIndexs([indexPath]) { [weak self] in
+          self?.scrollToShowTranslationIfNeeded(scrollTarget)
+        }
       }
     }
   }

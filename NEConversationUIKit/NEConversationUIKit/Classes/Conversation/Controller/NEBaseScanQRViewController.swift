@@ -3,7 +3,7 @@
 // found in the LICENSE file.
 
 import AVFoundation
-import NECommonUIKit
+import NEBaseUIKit
 import UIKit
 
 // MARK: - NEScanBeamView

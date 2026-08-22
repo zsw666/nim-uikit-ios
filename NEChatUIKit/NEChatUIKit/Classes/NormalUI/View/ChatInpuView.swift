@@ -9,6 +9,22 @@ import NEChatKit
 open class ChatInputView: NEBaseChatInputView {
   public var backViewHeightConstraint: NSLayoutConstraint?
   public var toolsBarTopMargin: NSLayoutConstraint?
+  private let shouldShowAIChatButton: Bool
+
+  override public init(_ conversationType: V2NIMConversationType) {
+    shouldShowAIChatButton = true
+    super.init(conversationType)
+  }
+
+  public init(_ conversationType: V2NIMConversationType, showAIChatButton: Bool) {
+    shouldShowAIChatButton = showAIChatButton
+    super.init(conversationType)
+  }
+
+  public required init?(coder: NSCoder) {
+    shouldShowAIChatButton = true
+    super.init(coder: coder)
+  }
 
   override open func commonUI() {
     super.commonUI()
@@ -49,6 +65,7 @@ open class ChatInputView: NEBaseChatInputView {
     }
 
     if let aiChatButton = aiChatButton,
+       shouldShowAIChatButton,
        conversationType == .CONVERSATION_TYPE_P2P {
       addSubview(aiChatButton)
       NSLayoutConstraint.activate([
@@ -135,7 +152,7 @@ open class ChatInputView: NEBaseChatInputView {
     contentView.addSubview(chatAddMoreView)
 
     setupMultipleLineView()
-    multipleLineExpandButton.setImage(chatCoreLoader.loadImage("normal_input_fold"), for: .normal)
+    multipleLineExpandButton.setImage(chatUIKitLoader.loadImage("normal_input_fold"), for: .normal)
   }
 
   override open func setLayerContents(_ open: Bool) {
@@ -153,7 +170,7 @@ open class ChatInputView: NEBaseChatInputView {
 
   func getTextviewRightConstraint() -> CGFloat {
     let expandButtonWidth = IMKitConfigCenter.shared.enableRichTextMessage ? 40 : 0
-    let aiChatButtonWidth = IMKitConfigCenter.shared.enableAIChatHelper ? 40 : 0
+    let aiChatButtonWidth = shouldShowAIChatButton && IMKitConfigCenter.shared.enableAIChatHelper ? 40 : 0
     let totalWidth = expandButtonWidth + aiChatButtonWidth
 
     if totalWidth > 0 {

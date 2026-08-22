@@ -5,7 +5,6 @@
 
 import MJRefresh
 import NEChatKit
-import NECommonKit
 import NIMSDK
 
 @objc
@@ -16,7 +15,7 @@ public protocol NEBaseConversationControllerDelegate: NSObjectProtocol {
 /// 会话列表页面 - 基类
 @objcMembers
 open class NEBaseConversationController: UIViewController, UIGestureRecognizerDelegate {
-  var className = "NEBaseConversationController"
+  var logClassName = "NEBaseConversationController"
   public var deleteButtonBackgroundColor: UIColor = NEConstant.hexRGB(0xA8ABB6)
   public var topButtonBackgroundColor: UIColor = NEConstant.hexRGB(0x337EFF)
 
@@ -50,7 +49,18 @@ open class NEBaseConversationController: UIViewController, UIGestureRecognizerDe
   /// 置顶l列表样式注册表
   public var stickTopCellRegisterDic = [0: NEBaseStickTopCell.self]
   public let viewModel = ConversationViewModel()
+  public let conversationGroupViewModel = ConversationGroupViewModel()
   private var networkBroken = false // 网络断开标志
+  private var renderedConversationGroupId: String?
+  var conversationGroupUIStyle: NEConversationGroupUIStyle {
+    .normal
+  }
+
+  private lazy var conversationGroupBar: NEConversationGroupBar = {
+    let view = NEConversationGroupBar(frame: CGRect(x: 0, y: 0, width: NEConstant.screenWidth, height: 44))
+    view.delegate = self
+    return view
+  }()
 
   public lazy var navigationView: TabNavigationView = {
     let nav = TabNavigationView(frame: CGRect.zero)
@@ -141,7 +151,7 @@ open class NEBaseConversationController: UIViewController, UIGestureRecognizerDe
     ])
 
     NSLayoutConstraint.activate([
-      emptyView.topAnchor.constraint(equalTo: tableView.topAnchor, constant: 100),
+      emptyView.topAnchor.constraint(equalTo: tableView.topAnchor, constant: 150),
       emptyView.bottomAnchor.constraint(equalTo: tableView.bottomAnchor),
       emptyView.leftAnchor.constraint(equalTo: tableView.leftAnchor),
       emptyView.rightAnchor.constraint(equalTo: tableView.rightAnchor),
@@ -226,9 +236,32 @@ open class NEBaseConversationController: UIViewController, UIGestureRecognizerDe
   override open func viewWillAppear(_ animated: Bool) {
     super.viewWillAppear(animated)
     showTitleBar()
+    conversationGroupViewModel.delegate = self
+    let groupEnabled = conversationGroupViewModel.syncEnabledState()
+    let selectionChangedWhileAway = renderedConversationGroupId != conversationGroupViewModel.selectedGroup?.groupId
+    if groupEnabled {
+      conversationGroupViewModel.refreshLocalizedDefaultGroupNames()
+      if conversationGroupViewModel.commonGroups.isEmpty {
+        // A controller can be reused when the app switches from local to cloud conversations.
+        conversationGroupViewModel.loadGroups()
+      } else {
+        conversationGroupViewModel.refreshUnreadCounts()
+      }
+      conversationGroupBar.configure(
+        groups: conversationGroupViewModel.commonGroups,
+        selectedId: conversationGroupViewModel.selectedGroup?.groupId,
+        style: conversationGroupUIStyle
+      )
+    } else {
+      conversationGroupBar.configure(groups: [], selectedId: nil, style: conversationGroupUIStyle)
+    }
 
-    // 是否取过数据，如果取过数据再刷新页面
-    if isRequestedData == true {
+    if groupEnabled, conversationGroupViewModel.selectedCustomGroupNeedsReload {
+      conversationGroupViewModel.refreshSelectedCustomGroup { [weak self] in
+        self?.reloadTableView()
+      }
+    } else if isRequestedData == true || selectionChangedWhileAway {
+      // 已加载数据或离开页面期间分组选择发生变化时，重新绑定列表数据。
       reloadTableView()
     }
 
@@ -364,9 +397,39 @@ open class NEBaseConversationController: UIViewController, UIGestureRecognizerDe
 
   open func initialConfig() {
     viewModel.delegate = self
+    conversationGroupViewModel.delegate = self
+    if conversationGroupViewModel.syncEnabledState() {
+      conversationGroupViewModel.loadGroups()
+    }
   }
 
   open func loadMoreData() {
+    if conversationGroupViewModel.isEnabled,
+       conversationGroupViewModel.selectedGroup?.type == .custom {
+      conversationGroupViewModel.loadMoreSelectedCustomGroup { [weak self] _, finished in
+        if finished {
+          self?.tableView.mj_footer?.endRefreshingWithNoMoreData()
+        } else {
+          self?.tableView.mj_footer?.endRefreshing()
+        }
+        self?.reloadTableView()
+      }
+      return
+    }
+
+    if conversationGroupViewModel.isEnabled,
+       conversationGroupViewModel.selectedGroup?.type == .unread {
+      conversationGroupViewModel.loadMoreSelectedUnreadGroup { [weak self] _, finished in
+        if finished {
+          self?.tableView.mj_footer?.endRefreshingWithNoMoreData()
+        } else {
+          self?.tableView.mj_footer?.endRefreshing()
+        }
+        self?.reloadTableView()
+      }
+      return
+    }
+
     viewModel.getConversationListByPage { [weak self] error, finished in
       self?.isRequestedData = true
       if finished == true, self?.viewModel.syncFinished == true {
@@ -393,7 +456,7 @@ open class NEBaseConversationController: UIViewController, UIGestureRecognizerDe
         self?.showToast(err.localizedDescription)
         self?.emptyView.isHidden = false
         NEALog.errorLog(
-          ModuleName + " " + (self?.className ?? ""),
+          ModuleName + " " + (self?.logClassName ?? ""),
           desc: "CALLBACK requestData failed，error = \(error!)"
         )
       } else {
@@ -404,6 +467,7 @@ open class NEBaseConversationController: UIViewController, UIGestureRecognizerDe
         }
 
         if let normalDatas = self?.viewModel.conversationListData {
+          self?.conversationGroupViewModel.refreshVirtualCounts(allData: normalDatas)
           if normalDatas.count <= 0 {
             self?.emptyView.isHidden = false
           } else {
@@ -732,16 +796,33 @@ extension NEBaseConversationController: UITableViewDelegate, UITableViewDataSour
   }
 
   open func tableView(_ tableView: UITableView, numberOfRowsInSection section: Int) -> Int {
-    viewModel.conversationListData.count
+    displayConversationList().count
+  }
+
+  open func tableView(_ tableView: UITableView, heightForHeaderInSection section: Int) -> CGFloat {
+    conversationGroupViewModel.isEnabled ? 44 : 0.01
+  }
+
+  open func tableView(_ tableView: UITableView, viewForHeaderInSection section: Int) -> UIView? {
+    guard conversationGroupViewModel.isEnabled else {
+      return nil
+    }
+    conversationGroupBar.configure(
+      groups: conversationGroupViewModel.commonGroups,
+      selectedId: conversationGroupViewModel.selectedGroup?.groupId,
+      style: conversationGroupUIStyle
+    )
+    return conversationGroupBar
   }
 
   open func tableView(_ tableView: UITableView,
                       cellForRowAt indexPath: IndexPath) -> UITableViewCell {
-    guard indexPath.row < viewModel.conversationListData.count else {
+    let displayData = displayConversationList()
+    guard indexPath.row < displayData.count else {
       return UITableViewCell()
     }
 
-    let model: NEConversationListModel = viewModel.conversationListData[indexPath.row]
+    let model: NEConversationListModel = displayData[indexPath.row]
 
     let reusedId = "\(model.customType)"
     let cell = tableView.dequeueReusableCell(withIdentifier: reusedId, for: indexPath)
@@ -762,11 +843,12 @@ extension NEBaseConversationController: UITableViewDelegate, UITableViewDataSour
   }
 
   open func tableView(_ tableView: UITableView, didSelectRowAt indexPath: IndexPath) {
-    guard indexPath.row < viewModel.conversationListData.count else {
+    let displayData = displayConversationList()
+    guard indexPath.row < displayData.count else {
       return
     }
 
-    let conversationModel = viewModel.conversationListData[indexPath.row]
+    let conversationModel = displayData[indexPath.row]
 
     if let didClick = ConversationUIConfig.shared.itemClick {
       didClick(self, conversationModel, indexPath)
@@ -780,11 +862,12 @@ extension NEBaseConversationController: UITableViewDelegate, UITableViewDataSour
 
   open func tableView(_ tableView: UITableView,
                       trailingSwipeActionsConfigurationForRowAt indexPath: IndexPath) -> UISwipeActionsConfiguration? {
-    guard indexPath.row < viewModel.conversationListData.count else {
+    let displayData = displayConversationList()
+    guard indexPath.row < displayData.count else {
       return nil
     }
 
-    let conversationModel = viewModel.conversationListData[indexPath.row]
+    let conversationModel = displayData[indexPath.row]
 
     // 删除 Action
     let deleteAction = UIContextualAction(style: .normal,
@@ -823,9 +906,13 @@ extension NEBaseConversationController: UITableViewDelegate, UITableViewDataSour
     }
 
     if let indexPathsForVisibleRows = tableView.indexPathsForVisibleRows {
+      let displayData = displayConversationList()
       var accountIds = [String]()
       for indexPath in indexPathsForVisibleRows {
-        let model = viewModel.conversationListData[indexPath.row]
+        guard indexPath.row < displayData.count else {
+          continue
+        }
+        let model = displayData[indexPath.row]
 
         if let conversationId = model.conversation?.conversationId,
            V2NIMConversationIdUtil.conversationType(conversationId) == .CONVERSATION_TYPE_P2P {
@@ -861,8 +948,9 @@ extension NEBaseConversationController: UITableViewDelegate, UITableViewDataSour
 
     var conversationModel: NEConversationListModel?
 
-    if indexPath.row < viewModel.conversationListData.count {
-      conversationModel = viewModel.conversationListData[indexPath.row]
+    let displayData = displayConversationList()
+    if indexPath.row < displayData.count {
+      conversationModel = displayData[indexPath.row]
     }
 
     if let deleteButtonClick = ConversationUIConfig.shared.deleteButtonClick {
@@ -888,7 +976,8 @@ extension NEBaseConversationController: UITableViewDelegate, UITableViewDataSour
       showToast(commonLocalizable("network_error"))
       return
     }
-    let conversationModel = viewModel.conversationListData[indexPath.row]
+    let displayData = displayConversationList()
+    let conversationModel = displayData[indexPath.row]
 
     if let stickTopButtonClick = ConversationUIConfig.shared.stickTopButtonClick {
       stickTopButtonClick(self, conversationModel, indexPath)
@@ -931,13 +1020,13 @@ extension NEBaseConversationController: UITableViewDelegate, UITableViewDataSour
     if isTop == true {
       viewModel.removeStickTop(conversation: conversation) { error in
         if let err = error {
-          NEALog.errorLog(ModuleName + " " + (weakSelf?.className ?? "ConversationController"), desc: "CALLBACK removeStickTopSession failed，error = \(err)")
+          NEALog.errorLog(ModuleName + " " + (weakSelf?.logClassName ?? "ConversationController"), desc: "CALLBACK removeStickTopSession failed，error = \(err)")
           completion(error)
 
           return
         } else {
           NEALog.infoLog(
-            ModuleName + " " + (weakSelf?.className ?? "ConversationController"), desc: "✅CALLBACK removeStickTopSession SUCCESS"
+            ModuleName + " " + (weakSelf?.logClassName ?? "ConversationController"), desc: "✅CALLBACK removeStickTopSession SUCCESS"
           )
           weakSelf?.reloadTableView()
           completion(nil)
@@ -948,13 +1037,13 @@ extension NEBaseConversationController: UITableViewDelegate, UITableViewDataSour
       viewModel.addStickTop(conversation: conversation) { error in
         if let err = error {
           NEALog.errorLog(
-            ModuleName + " " + (weakSelf?.className ?? "ConversationController"),
+            ModuleName + " " + (weakSelf?.logClassName ?? "ConversationController"),
             desc: "CALLBACK addStickTopSession failed，error = \(err)"
           )
           completion(error)
           return
         } else {
-          NEALog.infoLog(ModuleName + " " + (weakSelf?.className ?? "ConversationController"),
+          NEALog.infoLog(ModuleName + " " + (weakSelf?.logClassName ?? "ConversationController"),
                          desc: "✅CALLBACK addStickTopSession callback SUCCESS")
           weakSelf?.reloadTableView()
           completion(nil)
@@ -977,6 +1066,32 @@ extension NEBaseConversationController {
 
     // 路由跳转到聊天页面
     if conversation.type == .CONVERSATION_TYPE_P2P {
+      if let sessionId = V2NIMConversationIdUtil.conversationTargetId(conversationId) {
+        NEAIRobotManager.shared.checkIfRobot(sessionId) { [weak self] isRobot in
+          guard let self = self else {
+            return
+          }
+          if isRobot {
+            Router.shared.use(
+              PushBotSubSessionListRouter,
+              parameters: ["nav": self.navigationController as Any,
+                           "conversationId": conversationId,
+                           "sessionId": sessionId,
+                           "animated": false],
+              closure: nil
+            )
+          } else {
+            Router.shared.use(
+              PushP2pChatVCRouter,
+              parameters: ["nav": self.navigationController as Any,
+                           "conversationId": conversationId as Any,
+                           "animated": false],
+              closure: nil
+            )
+          }
+        }
+        return
+      }
       Router.shared.use(
         PushP2pChatVCRouter,
         parameters: ["nav": navigationController as Any,
@@ -1009,6 +1124,14 @@ extension NEBaseConversationController {
   ///   - Parameter model: 会话模型
   ///   - parameter indexPath: 索引
   open func didAddStickTopSession(model: NEConversationListModel, indexPath: IndexPath) {}
+
+  open func displayConversationList() -> [NEConversationListModel] {
+    if conversationGroupViewModel.isEnabled {
+      conversationGroupViewModel.refreshVirtualCounts(allData: viewModel.conversationListData)
+      return conversationGroupViewModel.displayedData(from: viewModel.conversationListData)
+    }
+    return viewModel.conversationListData
+  }
 }
 
 // MARK: - ConversationViewModelDelegate
@@ -1019,8 +1142,57 @@ extension NEBaseConversationController: ConversationViewModelDelegate {
   }
 
   open func reloadTableView() {
-    emptyView.isHidden = !viewModel.conversationListData.isEmpty
+    renderedConversationGroupId = conversationGroupViewModel.selectedGroup?.groupId
+    emptyView.isHidden = !displayConversationList().isEmpty
+    if conversationGroupViewModel.isEnabled {
+      conversationGroupBar.configure(
+        groups: conversationGroupViewModel.commonGroups,
+        selectedId: conversationGroupViewModel.selectedGroup?.groupId,
+        style: conversationGroupUIStyle
+      )
+    } else {
+      conversationGroupBar.configure(groups: [], selectedId: nil, style: conversationGroupUIStyle)
+    }
+    updateConversationListFooter()
     tableView.reloadData()
+  }
+
+  /// 自定义分组使用独立分页接口，切换分组时重新同步 footer 状态。
+  private func updateConversationListFooter() {
+    if conversationGroupViewModel.isEnabled,
+       conversationGroupViewModel.selectedGroup?.type == .custom {
+      if conversationGroupViewModel.selectedCustomFinished {
+        tableView.mj_footer = nil
+      } else if tableView.mj_footer == nil {
+        tableView.mj_footer = MJRefreshBackNormalFooter(
+          refreshingTarget: self,
+          refreshingAction: #selector(loadMoreData)
+        )
+      }
+      return
+    }
+
+    if conversationGroupViewModel.isEnabled,
+       conversationGroupViewModel.selectedGroup?.type == .unread {
+      if conversationGroupViewModel.selectedUnreadFinished {
+        tableView.mj_footer = nil
+      } else if tableView.mj_footer == nil {
+        tableView.mj_footer = MJRefreshBackNormalFooter(
+          refreshingTarget: self,
+          refreshingAction: #selector(loadMoreData)
+        )
+      }
+      return
+    }
+
+    if viewModel.syncFinished {
+      tableView.mj_footer = nil
+    } else if tableView.mj_footer == nil {
+      tableView.mj_footer = MJRefreshBackNormalFooter(
+        refreshingTarget: self,
+        refreshingAction: #selector(loadMoreData)
+      )
+    }
   }
 
   /// 由于数据变更可能导致底部有更多数据，此方法重新使列表加载更多能力开启
@@ -1033,6 +1205,39 @@ extension NEBaseConversationController: ConversationViewModelDelegate {
         refreshingAction: #selector(loadMoreData)
       )
     }
+  }
+}
+
+// MARK: - ConversationGroupViewModelDelegate
+
+extension NEBaseConversationController: ConversationGroupViewModelDelegate {
+  public func conversationGroupDidReload() {
+    reloadTableView()
+  }
+
+  public func conversationGroupSelectionChanged() {
+    reloadTableView()
+  }
+}
+
+// MARK: - NEConversationGroupBarDelegate
+
+extension NEBaseConversationController: NEConversationGroupBarDelegate {
+  func conversationGroupBar(_ bar: NEConversationGroupBar, didSelect group: NEConversationGroupModel) {
+    guard conversationGroupViewModel.syncEnabledState() else {
+      reloadTableView()
+      return
+    }
+    conversationGroupViewModel.selectGroup(group)
+  }
+
+  func conversationGroupBarDidTapManager(_ bar: NEConversationGroupBar) {
+    guard conversationGroupViewModel.syncEnabledState() else {
+      reloadTableView()
+      return
+    }
+    let controller = NEConversationGroupManageController(viewModel: conversationGroupViewModel, style: conversationGroupUIStyle)
+    navigationController?.pushViewController(controller, animated: true)
   }
 }
 

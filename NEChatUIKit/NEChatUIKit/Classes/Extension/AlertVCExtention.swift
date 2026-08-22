@@ -4,7 +4,7 @@
 // found in the LICENSE file.
 
 import Foundation
-import NECommonUIKit
+import NEBaseUIKit
 
 extension UIAlertController {
   class func reconfimAlertView(title: String?, message: String?,

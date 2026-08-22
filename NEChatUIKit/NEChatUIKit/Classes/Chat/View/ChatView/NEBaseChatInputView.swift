@@ -4,9 +4,7 @@
 // found in the LICENSE file.
 
 import NEChatKit
-import NECommonKit
-import NECommonUIKit
-import NECoreKit
+import NEBaseUIKit
 import NIMSDK
 import UIKit
 
@@ -148,7 +146,7 @@ open class NEBaseChatInputView: UIView, ChatRecordViewDelegate,
     textField.font = UIFont.systemFont(ofSize: 18.0)
     textField.textColor = .ne_darkText
     textField.returnKeyType = .send
-    textField.attributedPlaceholder = NSAttributedString(string: chatCoreLoader.localizable("multiple_line_placleholder"), attributes: [NSAttributedString.Key.foregroundColor: ChatUIConfig.shared.messageProperties.inputTextColor])
+    textField.attributedPlaceholder = NSAttributedString(string: chatUIKitLoader.localizable("multiple_line_placleholder"), attributes: [NSAttributedString.Key.foregroundColor: ChatUIConfig.shared.messageProperties.inputTextColor])
     return textField
   }()
 
@@ -163,7 +161,7 @@ open class NEBaseChatInputView: UIView, ChatRecordViewDelegate,
     let button = ExpandButton()
     button.translatesAutoresizingMaskIntoConstraints = false
     button.backgroundColor = .clear
-    button.setImage(chatCoreLoader.loadImage("multiple_send_image"), for: .normal)
+    button.setImage(chatUIKitLoader.loadImage("multiple_send_image"), for: .normal)
     return button
   }()
 

@@ -3,7 +3,6 @@
 // found in the LICENSE file.
 
 import NEChatKit
-import NECommonKit
 import UIKit
 
 @objcMembers
@@ -109,7 +108,7 @@ open class NEBasePinMessageLocationCell: NEBasePinMessageCell {
     ])
 
     pointImageView.translatesAutoresizingMaskIntoConstraints = false
-    pointImageView.image = chatCoreLoader.loadImage("location_point")
+    pointImageView.image = chatUIKitLoader.loadImage("location_point")
     mapImageView.addSubview(pointImageView)
     NSLayoutConstraint.activate([
       pointImageView.centerXAnchor.constraint(equalTo: mapImageView.centerXAnchor),

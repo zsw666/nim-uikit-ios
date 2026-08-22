@@ -22,9 +22,9 @@ open class ConversationListCell: NEBaseConversationListCell {
     ])
 
     NSLayoutConstraint.activate([
-      titleLabel.leftAnchor.constraint(equalTo: headImageView.rightAnchor, constant: 12),
-      titleLabel.rightAnchor.constraint(equalTo: timeLabel.leftAnchor, constant: -5),
-      titleLabel.topAnchor.constraint(equalTo: headImageView.topAnchor),
+      titleContentView.leftAnchor.constraint(equalTo: headImageView.rightAnchor, constant: 12),
+      titleContentView.rightAnchor.constraint(lessThanOrEqualTo: timeLabel.leftAnchor, constant: -5),
+      titleContentView.topAnchor.constraint(equalTo: headImageView.topAnchor),
     ])
 
     NSLayoutConstraint.activate([

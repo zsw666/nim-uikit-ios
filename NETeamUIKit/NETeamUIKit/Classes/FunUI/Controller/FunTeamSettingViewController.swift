@@ -2,9 +2,9 @@
 // Use of this source code is governed by a MIT license that can be
 // found in the LICENSE file.
 
+import NEChatKit
 import NEChatUIKit
-import NECommonUIKit
-import NECoreIM2Kit
+import NEBaseUIKit
 import NIMSDK
 import UIKit
 
@@ -56,7 +56,7 @@ open class FunTeamSettingViewController: NEBaseTeamSettingViewController {
 
   override public init(nibName nibNameOrNil: String?, bundle nibBundleOrNil: Bundle?) {
     super.init(nibName: nibNameOrNil, bundle: nibBundleOrNil)
-    className = "FunTeamSettingViewController"
+    logClassName = "FunTeamSettingViewController"
     cellClassDic = [
       SettingCellType.SettingArrowCell.rawValue: FunTeamArrowSettingCell.self,
       SettingCellType.SettingSwitchCell.rawValue: FunTeamSettingSwitchCell.self,
@@ -89,7 +89,7 @@ open class FunTeamSettingViewController: NEBaseTeamSettingViewController {
     navigationView.backgroundColor = .white
     navigationView.titleBarBottomLine.isHidden = false
 
-    addButton.setImage(teamCoreLoader.loadImage("fun_setting_add"), for: .normal)
+    addButton.setImage(teamUIKitLoader.loadImage("fun_setting_add"), for: .normal)
     addButtonWidth = addButton.widthAnchor.constraint(equalToConstant: 36)
     addButtonWidth?.isActive = true
     addButtonLeftMargin = addButton.leftAnchor.constraint(equalTo: cornerView.leftAnchor, constant: 16.0)

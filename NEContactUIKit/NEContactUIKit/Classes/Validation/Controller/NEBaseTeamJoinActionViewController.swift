@@ -3,8 +3,7 @@
 // found in the LICENSE file.
 
 import MJRefresh
-import NECoreIM2Kit
-import NECoreKit
+import NEChatKit
 import UIKit
 
 @objcMembers
@@ -113,12 +112,21 @@ open class NEBaseTeamJoinActionViewController: NEContactBaseViewController {
     guard view.isVisibleInWindow else {
       return
     }
+    guard NEChatDetectNetworkTool.shareInstance.manager?.isReachable != false else {
+      showToast(commonLocalizable("network_error"))
+      return
+    }
 
     NEALog.infoLog(ModuleName + " " + className(), desc: #function)
     showAlert(message: localizable("clear_all_team_join_action")) { [weak self] in
-      self?.viewModel.clearNotification { error in
-        self?.emptyView.isHidden = (self?.viewModel.teamJoinActions.count ?? 0) > 0
-        self?.tableView.reloadData()
+      guard let self = self else { return }
+      guard NEChatDetectNetworkTool.shareInstance.manager?.isReachable != false else {
+        self.showToast(commonLocalizable("network_error"))
+        return
+      }
+      self.viewModel.clearNotification { error in
+        self.emptyView.isHidden = self.viewModel.teamJoinActions.count > 0
+        self.tableView.reloadData()
       }
     }
   }

@@ -3,7 +3,7 @@
 // found in the LICENSE file.
 
 import Foundation
-import NECommonKit
+import NEChatKit
 
 public extension UIColor {
   static let normalContactThemeColor = UIColor.ne_normalTheme

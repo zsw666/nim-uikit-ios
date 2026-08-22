@@ -55,7 +55,7 @@ open class FunChatInputView: NEBaseChatInputView {
     let button = UIButton()
     button.translatesAutoresizingMaskIntoConstraints = false
     button.backgroundColor = UIColor.clear
-    button.setImage(chatCoreLoader.loadImage("fun_chat_input_reply_clear"), for: .normal)
+    button.setImage(chatUIKitLoader.loadImage("fun_chat_input_reply_clear"), for: .normal)
     button.accessibilityIdentifier = "id.replyClose"
     return button
   }()
@@ -64,8 +64,8 @@ open class FunChatInputView: NEBaseChatInputView {
     let button = UIButton()
     button.translatesAutoresizingMaskIntoConstraints = false
     button.backgroundColor = UIColor.clear
-    button.setImage(chatCoreLoader.loadImage("fun_chat_input_change_record"), for: .normal)
-    button.setImage(chatCoreLoader.loadImage("fun_chat_input_keyboard"), for: .selected)
+    button.setImage(chatUIKitLoader.loadImage("fun_chat_input_change_record"), for: .normal)
+    button.setImage(chatUIKitLoader.loadImage("fun_chat_input_keyboard"), for: .selected)
     button.accessibilityIdentifier = "id.changeRecordMode"
     return button
   }()
@@ -75,7 +75,7 @@ open class FunChatInputView: NEBaseChatInputView {
     button.translatesAutoresizingMaskIntoConstraints = false
     button.backgroundColor = UIColor.clear
     button.tag = addMoreBtnTag
-    button.setImage(chatCoreLoader.loadImage("fun_chat_input_show_more"), for: .normal)
+    button.setImage(chatUIKitLoader.loadImage("fun_chat_input_show_more"), for: .normal)
     button.accessibilityIdentifier = "id.inputMore"
     return button
   }()
@@ -85,7 +85,7 @@ open class FunChatInputView: NEBaseChatInputView {
     button.translatesAutoresizingMaskIntoConstraints = false
     button.backgroundColor = UIColor.clear
     button.tag = addEmojBtnTag
-    button.setImage(chatCoreLoader.loadImage("fun_chat_input_show_emoj"), for: .normal)
+    button.setImage(chatUIKitLoader.loadImage("fun_chat_input_show_emoj"), for: .normal)
     button.accessibilityIdentifier = "id.inputEmoji"
     return button
   }()
@@ -148,7 +148,7 @@ open class FunChatInputView: NEBaseChatInputView {
         expandButton.heightAnchor.constraint(equalToConstant: 40),
         expandButton.widthAnchor.constraint(equalToConstant: 44.0),
       ])
-      expandButton.setImage(chatCoreLoader.loadImage("fun_input_unfold"), for: .normal)
+      expandButton.setImage(chatUIKitLoader.loadImage("fun_input_unfold"), for: .normal)
       expandButton.addTarget(self, action: #selector(didClickExpandButton), for: .touchUpInside)
     }
 
@@ -243,7 +243,7 @@ open class FunChatInputView: NEBaseChatInputView {
     holdToSpeakView.isHidden = true
 
     setupMultipleLineView()
-    multipleLineExpandButton.setImage(chatCoreLoader.loadImage("fun_input_fold"), for: .normal)
+    multipleLineExpandButton.setImage(chatUIKitLoader.loadImage("fun_input_fold"), for: .normal)
   }
 
   override open func setLayerContents(_ open: Bool) {

@@ -5,7 +5,6 @@
 
 import Foundation
 import NEChatKit
-import NECommonKit
 import NIMSDK
 
 @objcMembers
@@ -24,6 +23,9 @@ open class MessageTextModel: MessageContentModel {
 
   /// 当前已加入 height 的译文高度（用于还原），0 表示尚未加入
   public var addedTranslationHeight: CGFloat = 0
+
+  /// 原文气泡宽度，避免隐藏译文后沿用译文撑大的宽度
+  var translationBaseContentWidth: CGFloat = 0
 
   /// 估算译文气泡高度（Normal 皮肤内嵌用）
   /// 布局：dividerTop(8) + divider(0.5) + textTop(8) + textBlock + gap(6) + footer(20) + containerBottom(chat_content_margin)
@@ -109,6 +111,7 @@ open class MessageTextModel: MessageContentModel {
     let contentSizeWidth = textWidth + chat_content_margin * 2
     let contentSizeHeight = textHeight + chat_content_margin * 2
     contentSize = CGSize(width: contentSizeWidth, height: contentSizeHeight)
+    translationBaseContentWidth = contentSizeWidth
     height = contentSizeHeight + chat_content_margin * 2 + fullNameHeight + chat_pin_height
   }
 
@@ -118,6 +121,7 @@ open class MessageTextModel: MessageContentModel {
     let contentSizeWidth = textWidth + chat_content_margin * 2
     let contentSizeHeight = textHeight + chat_content_margin * 2
     contentSize = CGSize(width: contentSizeWidth, height: contentSizeHeight)
+    translationBaseContentWidth = contentSizeWidth
     self.height = contentSizeHeight + chat_content_margin * 2 + fullNameHeight + chat_pin_height
   }
 

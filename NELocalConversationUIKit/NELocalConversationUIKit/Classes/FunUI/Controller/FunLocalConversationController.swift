@@ -2,8 +2,8 @@
 // Use of this source code is governed by a MIT license that can be
 // found in the LICENSE file.
 
-import NECommonUIKit
-import NECoreKit
+import NEChatKit
+import NEBaseUIKit
 import NIMSDK
 import UIKit
 
@@ -21,7 +21,7 @@ open class FunLocalConversationController: NEBaseLocalConversationController {
 
   override public init(nibName nibNameOrNil: String?, bundle nibBundleOrNil: Bundle?) {
     super.init(nibName: nibNameOrNil, bundle: nibBundleOrNil)
-    className = "FunLocalConversationController"
+    logClassName = "FunLocalConversationController"
     deleteButtonBackgroundColor = .funConversationDeleteActionColor
     topButtonBackgroundColor = .funConversationTopActionColor
     cellRegisterDic = [0: FunLocalConversationListCell.self]

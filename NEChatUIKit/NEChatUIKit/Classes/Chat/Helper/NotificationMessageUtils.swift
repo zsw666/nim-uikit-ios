@@ -5,8 +5,6 @@
 
 import Foundation
 import NEChatKit
-import NECoreIM2Kit
-import NECoreKit
 import NIMSDK
 
 public enum TeamType {
@@ -16,6 +14,7 @@ public enum TeamType {
 
 @objcMembers
 open class NotificationMessageUtils: NSObject {
+  @nonobjc
   open class func textForNotification(message: V2NIMMessage) -> String {
     if message.messageType != .MESSAGE_TYPE_NOTIFICATION {
       return ""
@@ -29,6 +28,7 @@ open class NotificationMessageUtils: NSObject {
   }
 
   /// 是否是群通知
+  @nonobjc
   open class func isDiscussSeniorTeamNoti(message: V2NIMMessage) -> Bool {
     if message.attachment is V2NIMMessageNotificationAttachment {
       return true
@@ -52,6 +52,7 @@ open class NotificationMessageUtils: NSObject {
     return (leave, dismiss)
   }
 
+  @nonobjc
   open class func textForTeamNotificationMessage(message: V2NIMMessage) -> String {
     var text = chatLocalizable("unknown_system_message")
     if let content = message.attachment as? V2NIMMessageNotificationAttachment {
@@ -103,6 +104,7 @@ open class NotificationMessageUtils: NSObject {
     }
   }
 
+  @nonobjc
   open class func fromName(message: V2NIMMessage) -> String {
     if let sourceId = message.senderId {
       if sourceId == IMKitClient.instance.account() {
@@ -115,6 +117,7 @@ open class NotificationMessageUtils: NSObject {
     }
   }
 
+  @nonobjc
   open class func toName(message: V2NIMMessage) -> [String] {
     var toNames = [String]()
     guard let content = message.attachment as? V2NIMMessageNotificationAttachment,
@@ -133,6 +136,7 @@ open class NotificationMessageUtils: NSObject {
     return toNames
   }
 
+  @nonobjc
   open class func teamName(message: V2NIMMessage) -> String {
     let teamtype = teamType(message: message)
     switch teamtype {
@@ -152,6 +156,51 @@ open class NotificationMessageUtils: NSObject {
       }
     }
     return .advanceTeam
+  }
+
+  @objc(textForNotification:)
+  open class func objc_textForNotification(_ message: V2NIMMessage) -> String {
+    textForNotification(message: message)
+  }
+
+  @objc(textForNotificationWithMessage:)
+  open class func objc_textForNotification(withMessage message: V2NIMMessage) -> String {
+    textForNotification(message: message)
+  }
+
+  @objc(isDiscussSeniorTeamNoti:)
+  open class func objc_isDiscussSeniorTeamNoti(_ message: V2NIMMessage) -> Bool {
+    isDiscussSeniorTeamNoti(message: message)
+  }
+
+  @objc(isTeamLeave:)
+  open class func objc_isTeamLeave(_ message: V2NIMMessage) -> Bool {
+    isTeamLeaveOrDismiss(message: message).isLeave
+  }
+
+  @objc(isTeamDismiss:)
+  open class func objc_isTeamDismiss(_ message: V2NIMMessage) -> Bool {
+    isTeamLeaveOrDismiss(message: message).isDismiss
+  }
+
+  @objc(textForTeamNotificationMessage:)
+  open class func objc_textForTeamNotificationMessage(_ message: V2NIMMessage) -> String {
+    textForTeamNotificationMessage(message: message)
+  }
+
+  @objc(fromName:)
+  open class func objc_fromName(_ message: V2NIMMessage) -> String {
+    fromName(message: message)
+  }
+
+  @objc(toName:)
+  open class func objc_toName(_ message: V2NIMMessage) -> [String] {
+    toName(message: message)
+  }
+
+  @objc(teamName:)
+  open class func objc_teamName(_ message: V2NIMMessage) -> String {
+    teamName(message: message)
   }
 
   public class func textOfUpdateTeam(fromName: String,

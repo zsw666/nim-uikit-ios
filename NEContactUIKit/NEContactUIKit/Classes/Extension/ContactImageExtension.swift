@@ -10,6 +10,6 @@ public extension UIImage {
     guard let imageName = name, !imageName.isEmpty else {
       return nil
     }
-    return contactCoreLoader.loadImage(imageName)
+    return contactUIKitLoader.loadImage(imageName)
   }
 }

@@ -2,6 +2,7 @@
 // Use of this source code is governed by a MIT license that can be
 // found in the LICENSE file.
 
+import NEChatKit
 import NIMSDK
 import UIKit
 
@@ -115,7 +116,7 @@ open class NEBasePinMessageMultiForwardCell: NEBasePinMessageCell {
       contentLabel3.isHidden = !(contentLabel3.attributedText != nil && numCount2 == 1)
     } else if numCount1 == 2 {
       contentLabel2.numberOfLines = 1
-      contentLabel2.isHidden = contentLabel3.attributedText != nil
+      contentLabel2.isHidden = contentLabel2.attributedText == nil
       contentLabel3.isHidden = true
     } else {
       contentLabel2.isHidden = true

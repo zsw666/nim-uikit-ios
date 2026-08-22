@@ -3,7 +3,7 @@
 // found in the LICENSE file.
 
 import Foundation
-import NECommonKit
+import NEChatKit
 import UIKit
 
 let IMUIKit_Style_Key = "imuikit_style_key"

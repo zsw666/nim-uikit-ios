@@ -5,9 +5,7 @@
 
 import NEChatKit
 import NEChatUIKit
-import NECommonUIKit
-import NECoreIM2Kit
-import NECoreKit
+import NEBaseUIKit
 import NIMSDK
 import UIKit
 
@@ -209,7 +207,7 @@ class MeViewController: UIViewController, UIGestureRecognizerDelegate {
     idLabel.text = "\(localizable("account")):\(userFriend?.user?.accountId ?? "")"
     nameLabel.text = userFriend?.showName()
     header.configHeadData(headUrl: userFriend?.user?.avatar,
-                          name: userFriend?.shortName() ?? "",
+                          name: userFriend?.shortName(showAlias: false) ?? "",
                           uid: userFriend?.user?.accountId ?? "")
   }
 

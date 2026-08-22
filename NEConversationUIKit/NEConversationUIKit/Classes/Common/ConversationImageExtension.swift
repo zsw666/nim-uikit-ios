@@ -10,6 +10,6 @@ public extension UIImage {
     guard let imageName = name else {
       return nil
     }
-    return conversationCoreLoader.loadImage(imageName)
+    return conversationUIKitLoader.loadImage(imageName)
   }
 }

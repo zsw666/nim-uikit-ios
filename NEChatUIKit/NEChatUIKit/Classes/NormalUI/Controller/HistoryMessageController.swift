@@ -51,17 +51,6 @@ open class HistoryMessageController: NEBaseHistorySearchController {
     return cell
   }
 
-  open func getMessageModel(model: MessageModel) {
-    if model.isReply {
-      let normalMoreHeight = chat_reply_height + chat_content_margin
-      model.contentSize = CGSize(
-        width: model.contentSize.width,
-        height: model.contentSize.height + normalMoreHeight
-      )
-      model.height += normalMoreHeight
-    }
-  }
-
   override open func searchTeamMemberAction() {
     if let conversationId = conversationId,
        let teamId = V2NIMConversationIdUtil.conversationTargetId(conversationId) {

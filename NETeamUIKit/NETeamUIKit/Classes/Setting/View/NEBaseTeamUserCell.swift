@@ -3,9 +3,7 @@
 // Use of this source code is governed by a MIT license that can be
 // found in the LICENSE file.
 
-import NECommonKit
-import NECoreIM2Kit
-import NECoreKit
+import NEChatKit
 import NIMSDK
 import UIKit
 
@@ -16,13 +14,13 @@ open class NEBaseTeamUserCell: UICollectionViewCell {
       if let userId = user?.nimUser?.user?.accountId {
         if let u = NEFriendUserCache.shared.getFriendInfo(userId) {
           let url = u.user?.avatar
-          let name = user?.getShortName(user?.showNickInTeam() ?? "") ?? ""
           let accountId = u.user?.accountId ?? ""
+          let name = user?.getShortName(u.showName(false) ?? accountId) ?? ""
           userHeaderView.configHeadData(headUrl: url, name: name, uid: accountId)
         } else {
           let url = user?.nimUser?.user?.avatar
-          let name = user?.getShortName(user?.showNickInTeam() ?? "") ?? ""
           let accountId = user?.nimUser?.user?.accountId ?? ""
+          let name = user?.getShortName(user?.nimUser?.showName(false) ?? accountId) ?? ""
           userHeaderView.configHeadData(headUrl: url, name: name, uid: accountId)
         }
       }

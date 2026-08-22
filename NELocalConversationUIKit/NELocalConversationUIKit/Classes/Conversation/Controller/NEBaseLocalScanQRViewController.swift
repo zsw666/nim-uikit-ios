@@ -3,7 +3,7 @@
 // found in the LICENSE file.
 
 import AVFoundation
-import NECommonUIKit
+import NEBaseUIKit
 import UIKit
 
 /// 扫一扫基类 ViewController（本地会话模块），负责相机授权检查、扫码逻辑及结果回调

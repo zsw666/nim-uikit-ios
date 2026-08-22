@@ -4,7 +4,6 @@
 
 import Foundation
 import NEChatKit
-import NECoreIM2Kit
 import NIMSDK
 
 @objc
@@ -46,6 +45,7 @@ public class NEP2PChatUserCache: NSObject {
   }
 
   // 添加（更新）非好友信息
+  @nonobjc
   open func updateUserInfo(_ user: V2NIMUser?) {
     guard let accid = user?.accountId else { return }
     noUserCache[accid]?.user = user
@@ -56,6 +56,7 @@ public class NEP2PChatUserCache: NSObject {
   }
 
   // 添加（更新）非好友信息
+  @nonobjc
   open func updateUserInfo(_ user: NEUserWithFriend?) {
     guard let accid = user?.user?.accountId else { return }
     noUserCache[accid] = user
@@ -79,10 +80,31 @@ public class NEP2PChatUserCache: NSObject {
   }
 
   /// 获取缓存用户名字，p2p： 备注 > 昵称 > ID
+  @nonobjc
   open func getShowName(_ userId: String,
                         _ showAlias: Bool = true) -> String {
     let user = getUserInfo(userId)
     return user?.showName(showAlias) ?? userId
+  }
+
+  @objc(updateUserInfoWithUser:)
+  open func objc_updateUserInfo(withUser user: V2NIMUser?) {
+    updateUserInfo(user)
+  }
+
+  @objc(updateUserInfoWithFriend:)
+  open func objc_updateUserInfo(withFriend user: NEUserWithFriend?) {
+    updateUserInfo(user)
+  }
+
+  @objc(getShowName:)
+  open func objc_getShowName(_ userId: String) -> String {
+    getShowName(userId)
+  }
+
+  @objc(getShowName:showAlias:)
+  open func objc_getShowName(_ userId: String, showAlias: Bool) -> String {
+    getShowName(userId, showAlias)
   }
 }
 

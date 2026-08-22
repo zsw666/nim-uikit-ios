@@ -4,9 +4,7 @@
 // found in the LICENSE file.
 
 import NEChatKit
-import NECommonKit
-import NECommonUIKit
-import NECoreIM2Kit
+import NEBaseUIKit
 import NIMSDK
 
 @objc

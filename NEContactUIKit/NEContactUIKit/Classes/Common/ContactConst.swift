@@ -5,8 +5,7 @@
 
 import CoreText
 import Foundation
-import NECommonKit
-import NECoreIM2Kit
+import NEChatKit
 
 @objc
 public enum ContactCellType: Int {
@@ -17,9 +16,9 @@ public enum ContactCellType: Int {
 
 public typealias ContactsSelectCompletion = ([ContactInfo]) -> Void?
 
-let contactCoreLoader = CommonLoader<NEContactBaseViewController>()
+let contactUIKitLoader = NEChatKitResourceLoader<NEContactBaseViewController>()
 func localizable(_ key: String) -> String {
-  contactCoreLoader.localizable(key)
+  contactUIKitLoader.localizable(key)
 }
 
 public let ModuleName = "NEContactUIKit"

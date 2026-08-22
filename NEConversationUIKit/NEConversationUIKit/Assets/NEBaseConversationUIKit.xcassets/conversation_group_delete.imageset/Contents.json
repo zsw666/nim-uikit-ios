@@ -1,0 +1,12 @@
+{
+  "images" : [
+    {
+      "filename" : "conversation_group_delete.svg",
+      "idiom" : "universal"
+    }
+  ],
+  "info" : {
+    "author" : "xcode",
+    "version" : 1
+  }
+}

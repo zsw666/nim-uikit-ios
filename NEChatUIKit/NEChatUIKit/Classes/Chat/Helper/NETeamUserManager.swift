@@ -4,7 +4,6 @@
 
 import Foundation
 import NEChatKit
-import NECoreIM2Kit
 import NIMSDK
 
 /// 群聊缓存代理，包含群信息更新和群成员更新
@@ -41,6 +40,41 @@ public class NETeamUserManager: NSObject {
 
   // 非好友的用户信息
   private var userInfoCache = [String: NEUserWithFriend]()
+  private let userInfoCacheLock = NSLock()
+
+  private func withUserInfoCacheLock<T>(_ operation: () -> T) -> T {
+    userInfoCacheLock.lock()
+    defer { userInfoCacheLock.unlock() }
+    return operation()
+  }
+
+  /// 写入非好友用户资料，避免较早发起的异步查询覆盖较新的资料变更通知
+  @discardableResult
+  private func storeUserInfo(_ userWithFriend: NEUserWithFriend,
+                             notify: Bool) -> Bool {
+    guard let user = userWithFriend.user,
+          let accid = user.accountId else {
+      return false
+    }
+
+    let didStore = withUserInfoCacheLock {
+      if let cachedUser = userInfoCache[accid]?.user,
+         user.updateTime < cachedUser.updateTime {
+        return false
+      }
+
+      userInfoCache[accid] = userWithFriend
+      return true
+    }
+
+    guard didStore else { return false }
+    if notify {
+      multiDelegate |> { delegate in
+        delegate.onTeamMemberUpdate?(accid)
+      }
+    }
+    return true
+  }
 
   // 是否已经拉取了所有群成员
   private var haveLoadAllMembers = false
@@ -94,6 +128,40 @@ public class NETeamUserManager: NSObject {
     }
   }
 
+  @objc(refreshTeamInfoAndSelfMember:completion:)
+  open func refreshTeamInfoAndSelfMember(_ teamId: String,
+                                         completion: @escaping () -> Void) {
+    guard !teamId.isEmpty else {
+      completion()
+      return
+    }
+
+    let group = DispatchGroup()
+
+    group.enter()
+    teamRepo.getTeamInfo(teamId) { [weak self] team, error in
+      if error == nil, let team = team {
+        self?.updateTeamInfo(team)
+      }
+      group.leave()
+    }
+
+    let accountId = IMKitClient.instance.account()
+    if !accountId.isEmpty {
+      group.enter()
+      teamRepo.getTeamMember(teamId, .TEAM_TYPE_NORMAL, accountId) { [weak self] teamMember, error in
+        if error == nil, let teamMember = teamMember {
+          self?.updateTeamMemberInfo(teamMember, true)
+        }
+        group.leave()
+      }
+    }
+
+    group.notify(queue: .main) {
+      completion()
+    }
+  }
+
   /// 更新当前群信息
   /// - Parameter team: 群信息
   open func updateTeamInfo(_ team: V2NIMTeam?) {
@@ -109,6 +177,7 @@ public class NETeamUserManager: NSObject {
   /// 更新群成员信息
   /// - Parameter teamMember: 群成员信息
   /// - Parameter notify: 是否需要通知
+  @nonobjc
   open func updateTeamMemberInfo(_ teamMember: V2NIMTeamMember?,
                                  _ notify: Bool = true) {
     guard let teamMember = teamMember, teamMember.teamId == tid else {
@@ -127,23 +196,23 @@ public class NETeamUserManager: NSObject {
   }
 
   // 添加（更新）非好友信息
+  @nonobjc
   open func updateUserInfo(user: V2NIMUser?) {
     guard let accid = user?.accountId else { return }
-    userInfoCache[accid]?.user = user
+    let cachedUserInfo = getUserInfo(accid)
+    guard cachedUserInfo != nil || teamMemberCache[accid] != nil,
+          let user = user else { return }
 
-    multiDelegate |> { delegate in
-      delegate.onTeamMemberUpdate?(accid)
-    }
+    let userWithFriend = NEUserWithFriend(user: user,
+                                          friend: cachedUserInfo?.friend)
+    storeUserInfo(userWithFriend, notify: true)
   }
 
   // 添加（更新）非好友信息
+  @nonobjc
   open func updateUserInfo(userWithFriend: NEUserWithFriend?) {
-    guard let accid = userWithFriend?.user?.accountId else { return }
-    userInfoCache[accid] = userWithFriend
-
-    multiDelegate |> { delegate in
-      delegate.onTeamMemberUpdate?(accid)
-    }
+    guard let userWithFriend = userWithFriend else { return }
+    storeUserInfo(userWithFriend, notify: true)
   }
 
   /// 获取缓存的群聊信息
@@ -179,6 +248,7 @@ public class NETeamUserManager: NSObject {
     if haveLoadAllMembers {
       // 一次性取好友缓存快照，避免循环中每个成员各自加锁（N 次 sync → 1 次 sync）
       let friendCache = NEFriendUserCache.shared.friendCache ?? [:]
+      let userInfoCache = withUserInfoCacheLock { self.userInfoCache }
       var teamMemberInfoModels = [NETeamMemberInfoModel]()
       for (accid, member) in teamMemberCache {
         let model = NETeamMemberInfoModel()
@@ -194,7 +264,7 @@ public class NETeamUserManager: NSObject {
 
   /// 获取缓存的非好友用户信息
   open func getUserInfo(_ accountId: String) -> NEUserWithFriend? {
-    userInfoCache[accountId]
+    withUserInfoCacheLock { userInfoCache[accountId] }
   }
 
   /// 删除群成员信息缓存
@@ -208,12 +278,15 @@ public class NETeamUserManager: NSObject {
   open func removeAllTeamInfo() {
     tid = nil
     currentTeam = nil
-    userInfoCache.removeAll()
+    withUserInfoCacheLock {
+      userInfoCache.removeAll()
+    }
     teamMemberCache.removeAll()
     haveLoadAllMembers = false
   }
 
   /// 获取缓存群成员名字，team: 备注 > 群昵称 > 昵称 > ID
+  @nonobjc
   open func getShowName(_ accountId: String,
                         _ showAlias: Bool = true) -> String {
     // 数字人直接返回
@@ -222,7 +295,7 @@ public class NETeamUserManager: NSObject {
     }
 
     // 非好友缓存
-    var fullName = userInfoCache[accountId]?.showName() ?? NEP2PChatUserCache.shared.getShowName(accountId)
+    var fullName = getUserInfo(accountId)?.showName() ?? NEP2PChatUserCache.shared.getShowName(accountId)
 
     // 好友缓存
     if NEFriendUserCache.shared.isFriend(accountId) {
@@ -266,7 +339,7 @@ public class NETeamUserManager: NSObject {
     for userId in accountIds {
       if !NEAIUserManager.shared.isAIUser(userId),
          !NEFriendUserCache.shared.isFriend(userId),
-         userInfoCache[userId] == nil {
+         getUserInfo(userId) == nil {
         loadUserIds.insert(userId)
       }
 
@@ -281,7 +354,7 @@ public class NETeamUserManager: NSObject {
       for loadUserIdChunk in loadUserIdChunks {
         group.enter()
         ContactRepo.shared.getUserListFromCloud(accountIds: loadUserIdChunk) { [weak self] users, error in
-          users?.forEach { self?.updateUserInfo(userWithFriend: $0) }
+          users?.forEach { self?.storeUserInfo($0, notify: true) }
           group.leave()
         }
       }
@@ -422,8 +495,8 @@ public class NETeamUserManager: NSObject {
       } else {
         if let users = users {
           for user in users {
-            if let accid = user.user?.accountId {
-              self?.userInfoCache[accid] = user
+            if user.user?.accountId != nil {
+              self?.storeUserInfo(user, notify: false)
               memberUsers.append(user)
             }
           }
@@ -432,6 +505,50 @@ public class NETeamUserManager: NSObject {
         weakSelf?.fetchTeamMemberUserInfos(&temArray, memberUsers, completion)
       }
     }
+  }
+
+  @objc(updateTeamMemberInfo:)
+  open func objc_updateTeamMemberInfo(_ teamMember: V2NIMTeamMember?) {
+    updateTeamMemberInfo(teamMember)
+  }
+
+  @objc(updateTeamMemberInfo:notify:)
+  open func objc_updateTeamMemberInfo(_ teamMember: V2NIMTeamMember?, notify: Bool) {
+    updateTeamMemberInfo(teamMember, notify)
+  }
+
+  @objc(updateUserInfoWithUser:)
+  open func objc_updateUserInfo(withUser user: V2NIMUser?) {
+    updateUserInfo(user: user)
+  }
+
+  @objc(updateUserInfoWithFriend:)
+  open func objc_updateUserInfo(withFriend userWithFriend: NEUserWithFriend?) {
+    updateUserInfo(userWithFriend: userWithFriend)
+  }
+
+  @objc(getShowName:)
+  open func objc_getShowName(_ accountId: String) -> String {
+    getShowName(accountId)
+  }
+
+  @objc(getShowName:showAlias:)
+  open func objc_getShowName(_ accountId: String, showAlias: Bool) -> String {
+    getShowName(accountId, showAlias)
+  }
+
+  @objc(getTeamMembers:notify:completion:)
+  open func objc_getTeamMembers(_ accountIds: [String],
+                                notify: Bool,
+                                completion: @escaping () -> Void) {
+    getTeamMembers(accountIds, notify, completion)
+  }
+
+  @objc(getAllTeamMembers:queryType:completion:)
+  open func objc_getAllTeamMembers(_ teamId: String,
+                                   queryType: V2NIMTeamMemberRoleQueryType,
+                                   completion: @escaping ([NEUserWithFriend]) -> Void) {
+    getAllTeamMembers(teamId, queryType, completion)
   }
 }
 
@@ -451,7 +568,8 @@ extension NETeamUserManager: NEContactListener {
           continue
         }
 
-        if userInfoCache[accid] != nil {
+        if getUserInfo(accid) != nil ||
+          (teamMemberCache[accid] != nil && !NEFriendUserCache.shared.isFriend(accid)) {
           updateUserInfo(user: contact.user)
         } else if teamMemberCache[accid] != nil,
                   NEFriendUserCache.shared.isFriend(accid) {
@@ -490,7 +608,7 @@ extension NETeamUserManager: NETeamListener {
 
     splitMembers(notFriendMembers) { [weak self] userFirends in
       for userFirend in userFirends {
-        self?.updateUserInfo(userWithFriend: userFirend)
+        self?.storeUserInfo(userFirend, notify: true)
       }
     }
   }

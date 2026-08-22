@@ -66,6 +66,26 @@
 "untop_message"="移除了置顶消息";
 "chat_setting"="聊天设置";
 "session_set_top"="聊天置顶";
+"bot_sub_session_rename"="重命名子会话";
+"bot_sub_session_rename_action"="重命名";
+"bot_sub_session_rename_conversation"="重命名会话";
+"bot_sub_session_search_hint"="搜索子会话名称";
+"bot_sub_session_save"="确定";
+"bot_sub_session_input_name"="请输入名称";
+"bot_sub_session_removed"="当前话题已被删除。";
+"bot_sub_session_guide"="和%@开始聊一聊";
+"bot_sub_session_new_conversation"="新会话";
+"bot_sub_session_create_conversation"="新建会话";
+"bot_sub_session_empty"="暂无话题，发送第一条消息开始新话题";
+"bot_sub_session_search_empty"="未找到相关子会话";
+"bot_sub_session_load_failed"="加载失败";
+"bot_sub_session_retry"="点击重试";
+"bot_sub_session_load_more_failed"="数据请求失败，请稍后重试";
+"bot_sub_session_offline_create"="当前离线，暂无法新建会话";
+"bot_sub_session_rename_failed"="修改失败，请重试";
+"bot_sub_session_delete_confirm"="删除该子会话？";
+"bot_sub_session_delete_title"="话题删除";
+"bot_sub_session_delete_topic"="删除话题“%@”？";
 "message_remind"="开启消息提醒";
 "open_soon"="暂未开放";
 "no_permission_tip"="暂无操作权限";
@@ -365,3 +385,4 @@
 "search_loading_more_messages"="正在加载更多消息...";
 
 "new_message_count"=" %d 条新消息";
+"bot_sub_session_delete_failed"="删除失败，请重试";

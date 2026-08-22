@@ -4,7 +4,7 @@
 
 import Foundation
 import NEChatUIKit
-import NECommonUIKit
+import NEBaseUIKit
 import UIKit
 
 public protocol NEP2PSecurityWarningViewDelegate: NSObjectProtocol {

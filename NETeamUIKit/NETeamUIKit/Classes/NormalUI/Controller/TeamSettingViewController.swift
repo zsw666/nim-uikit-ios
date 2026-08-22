@@ -3,9 +3,9 @@
 // Use of this source code is governed by a MIT license that can be
 // found in the LICENSE file.
 
+import NEChatKit
 import NEChatUIKit
-import NECommonUIKit
-import NECoreIM2Kit
+import NEBaseUIKit
 import NIMSDK
 import UIKit
 
@@ -13,7 +13,7 @@ import UIKit
 open class TeamSettingViewController: NEBaseTeamSettingViewController {
   override public init(nibName nibNameOrNil: String?, bundle nibBundleOrNil: Bundle?) {
     super.init(nibName: nibNameOrNil, bundle: nibBundleOrNil)
-    className = "TeamSettingViewController"
+    logClassName = "TeamSettingViewController"
     cellClassDic = [
       SettingCellType.SettingArrowCell.rawValue: TeamArrowSettingCell.self,
       SettingCellType.SettingSwitchCell.rawValue: TeamSettingSwitchCell.self,
@@ -79,7 +79,7 @@ open class TeamSettingViewController: NEBaseTeamSettingViewController {
     navigationController?.navigationBar.backgroundColor = .ne_lightBackgroundColor
 
     teamHeaderView.setCornerRadius(21.0)
-    addButton.setImage(teamCoreLoader.loadImage("setting_add"), for: .normal)
+    addButton.setImage(teamUIKitLoader.loadImage("setting_add"), for: .normal)
     addButtonWidth = addButton.widthAnchor.constraint(equalToConstant: 36)
     addButtonWidth?.isActive = true
     addButtonLeftMargin = addButton.leftAnchor.constraint(equalTo: cornerView.leftAnchor, constant: 16.0)

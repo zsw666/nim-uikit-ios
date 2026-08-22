@@ -4,8 +4,7 @@
 
 import Foundation
 import NEChatKit
-import NECommonUIKit
-import NECoreIM2Kit
+import NEBaseUIKit
 import NIMSDK
 
 @objc
@@ -28,6 +27,7 @@ open class UserSettingViewModel: NSObject, AIUserPinListener {
   var userInfo: NEUserWithFriend?
 
   var cellDatas = [UserSettingCellModel]()
+  var fromBotSubSession = false
 
   weak var delegate: UserSettingViewModelDelegate?
 
@@ -105,7 +105,7 @@ open class UserSettingViewModel: NSObject, AIUserPinListener {
     cellDatas.removeAll()
 
     // 标记
-    if IMKitConfigCenter.shared.enablePinMessage {
+    if IMKitConfigCenter.shared.enablePinMessage, !fromBotSubSession {
       let mark = UserSettingCellModel()
       mark.cellName = chatLocalizable("operation_pin")
       mark.type = UserSettingType.SelectType.rawValue
@@ -116,13 +116,15 @@ open class UserSettingViewModel: NSObject, AIUserPinListener {
     }
 
     // 搜索聊天记录
-    let history = UserSettingCellModel()
-    history.cellName = chatLocalizable("historical_record")
-    history.type = UserSettingType.SelectType.rawValue
-    history.cellClick = { [weak self] in
-      self?.delegate?.didClickHistory()
+    if !fromBotSubSession {
+      let history = UserSettingCellModel()
+      history.cellName = chatLocalizable("historical_record")
+      history.type = UserSettingType.SelectType.rawValue
+      history.cellClick = { [weak self] in
+        self?.delegate?.didClickHistory()
+      }
+      cellDatas.append(history)
     }
-    cellDatas.append(history)
 
     // 开启消息提醒
     let remind = UserSettingCellModel()
@@ -173,29 +175,28 @@ open class UserSettingViewModel: NSObject, AIUserPinListener {
       if let uid = weakSelf?.userInfo?.user?.accountId, let cid = V2NIMConversationIdUtil.p2pConversationId(uid) {
         if NIMSDK.shared().v2Option?.enableV2CloudConversation == false {
           weakSelf?.localConversationRepo.setStickTop(cid, isOpen) { error in
-            print(isOpen ? "add stick : " : "remote stick : ", error as Any)
             if let err = error {
               weakSelf?.delegate?.didNeedRefreshUI()
               weakSelf?.delegate?.didError(err)
             } else {
-              setTop.switchOpen = !isOpen
+              setTop.switchOpen = isOpen
             }
           }
         } else {
           weakSelf?.conversationRepo.setStickTop(cid, isOpen) { error in
-            print(isOpen ? "add stick : " : "remote stick : ", error as Any)
             if let err = error {
               weakSelf?.delegate?.didNeedRefreshUI()
               weakSelf?.delegate?.didError(err)
             } else {
-              setTop.switchOpen = !isOpen
+              setTop.switchOpen = isOpen
             }
           }
         }
       }
     }
 
-    if let user = userInfo?.user,
+    if !fromBotSubSession,
+       let user = userInfo?.user,
        let account = user.accountId,
        let serverExtensions = user.serverExtension,
        let jsonObject = NECommonUtil.getDictionaryFromJSONString(serverExtensions) {

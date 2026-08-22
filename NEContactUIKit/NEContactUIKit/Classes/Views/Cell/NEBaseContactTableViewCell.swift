@@ -5,8 +5,6 @@
 
 import Foundation
 import NEChatKit
-import NECoreIM2Kit
-import NECoreKit
 import UIKit
 
 @objcMembers
@@ -135,8 +133,8 @@ open class NEBaseContactTableViewCell: NEBaseContactViewCell, ContactCellDataPro
       arrowImageView.isHidden = true
 
       let url = user.user?.avatar
-      let name = user.shortName() ?? ""
       let accountId = user.user?.accountId ?? ""
+      let name = user.user?.name ?? accountId
       userHeaderView.configHeadData(headUrl: url, name: name, uid: accountId)
     }
   }

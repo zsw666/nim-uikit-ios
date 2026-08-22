@@ -6,7 +6,6 @@
 import CoreAudio
 import Foundation
 import NEChatKit
-import NECoreIM2Kit
 import NIMSDK
 
 @objcMembers

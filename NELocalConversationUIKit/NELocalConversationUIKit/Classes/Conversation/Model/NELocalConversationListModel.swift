@@ -2,15 +2,20 @@
 // Use of this source code is governed by a MIT license that can be
 // found in the LICENSE file.
 
-import NECoreIM2Kit
+import NEChatKit
 import NIMSDK
 import UIKit
 
 @objcMembers
 public class NELocalConversationListModel: NSObject {
+  private var locallyReadTime: TimeInterval = 0
+
   /// 会话
   public var conversation: V2NIMLocalConversation? {
     didSet {
+      if oldValue?.conversationId != conversation?.conversationId {
+        locallyReadTime = 0
+      }
       if let lastMessage = conversation?.lastMessage,
          lastMessage.messageType == .MESSAGE_TYPE_TEXT,
          let text = lastMessage.text {
@@ -32,4 +37,23 @@ public class NELocalConversationListModel: NSObject {
 
   /// 单聊是否在线
   public var p2pOnline: Bool = false
+
+  /// 优先使用 UIKit 已确认的已读状态，避免 SDK 未抛会话变更时继续展示旧未读数。
+  public var unreadCount: Int {
+    let sdkUnreadCount = conversation?.unreadCount ?? 0
+    guard sdkUnreadCount > 0, locallyReadTime > 0 else {
+      return sdkUnreadCount
+    }
+    let lastMessageTime = conversation?.lastMessage?.messageRefer.createTime ?? 0
+    return lastMessageTime <= locallyReadTime ? 0 : sdkUnreadCount
+  }
+
+  public func markUnreadCountCleared() {
+    let lastMessageTime = conversation?.lastMessage?.messageRefer.createTime ?? Date().timeIntervalSince1970
+    locallyReadTime = max(locallyReadTime, lastMessageTime)
+  }
+
+  public func markUnreadCountCleared(through readTime: TimeInterval) {
+    locallyReadTime = max(locallyReadTime, readTime)
+  }
 }

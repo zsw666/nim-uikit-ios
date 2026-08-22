@@ -3,7 +3,7 @@
 // found in the LICENSE file.
 
 import Foundation
-import NECommonKit
+import NEChatKit
 
 extension UIColor {
   // 导航栏（包含状态栏）背景色

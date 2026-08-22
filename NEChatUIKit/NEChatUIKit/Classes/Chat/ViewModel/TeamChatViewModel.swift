@@ -5,7 +5,6 @@
 import CoreText
 import Foundation
 import NEChatKit
-import NECoreIM2Kit
 import NIMSDK
 
 @objc
@@ -431,17 +430,17 @@ extension TeamChatViewModel: NETeamChatUserCacheListener {
   /// 群成员更新
   /// - Parameter accountId: 用户 id
   open func onTeamMemberUpdate(_ accountId: String) {
-    guard let teamMember = NETeamUserManager.shared.getTeamMemberInfo(accountId) else { return }
-
-    if self.teamMember == nil || accountId == self.teamMember?.accountId {
-      self.teamMember = teamMember
-      loadTopMessage()
-    }
-
     updateMessageInfo(accountId)
 
-    if let delegate = delegate as? TeamChatViewModelDelegate {
-      delegate.onTeamMemberUpdate?([teamMember])
+    if let teamMember = NETeamUserManager.shared.getTeamMemberInfo(accountId) {
+      if self.teamMember == nil || accountId == self.teamMember?.accountId {
+        self.teamMember = teamMember
+        loadTopMessage()
+      }
+
+      if let delegate = delegate as? TeamChatViewModelDelegate {
+        delegate.onTeamMemberUpdate?([teamMember])
+      }
     }
   }
 }

@@ -4,8 +4,6 @@
 
 import Foundation
 import NEChatKit
-import NECoreIM2Kit
-import NECoreKit
 
 @objc
 public protocol TeamJoinActionViewModelDelegate: NSObjectProtocol {

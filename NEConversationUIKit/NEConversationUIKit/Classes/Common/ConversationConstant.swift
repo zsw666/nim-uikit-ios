@@ -4,11 +4,11 @@
 // found in the LICENSE file.
 
 import Foundation
-import NECommonKit
+import NEChatKit
 
-let conversationCoreLoader = CommonLoader<NEBaseConversationController>()
+let conversationUIKitLoader = NEChatKitResourceLoader<NEBaseConversationController>()
 func localizable(_ key: String) -> String {
-  conversationCoreLoader.localizable(key)
+  conversationUIKitLoader.localizable(key)
 }
 
 public let ModuleName = "NEConversationUIKit"

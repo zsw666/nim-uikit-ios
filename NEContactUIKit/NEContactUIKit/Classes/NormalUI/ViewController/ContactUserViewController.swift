@@ -3,15 +3,14 @@
 // Use of this source code is governed by a MIT license that can be
 // found in the LICENSE file.
 
-import NECoreIM2Kit
-import NECoreKit
+import NEChatKit
 import NIMSDK
 import UIKit
 
 @objcMembers
 open class ContactUserViewController: NEBaseContactUserViewController {
   open func initNormal() {
-    className = "ContactUserViewController"
+    logClassName = "ContactUserViewController"
     headerView = UserInfoHeaderView()
   }
 

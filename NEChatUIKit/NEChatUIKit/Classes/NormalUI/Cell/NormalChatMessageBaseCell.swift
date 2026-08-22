@@ -106,6 +106,7 @@ open class NormalChatMessageBaseCell: NEBaseChatMessageCell {
     let replyViewHeightAnchor = isSend ? replyViewRightHeightAnchor : replyViewLeftHeightAnchor
 
     if model.isRevoked == false,
+       !model.inMultiForward,
        var text = model.replyText,
        let font = replyLabel.font {
       // 如果有回复的消息，需要在回复的消息前加上“| ”

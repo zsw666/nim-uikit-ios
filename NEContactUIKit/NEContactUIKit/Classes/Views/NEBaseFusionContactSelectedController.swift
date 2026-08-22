@@ -3,8 +3,7 @@
 // found in the LICENSE file.
 
 import NEChatKit
-import NECommonUIKit
-import NECoreIM2Kit
+import NEBaseUIKit
 import UIKit
 
 @objc

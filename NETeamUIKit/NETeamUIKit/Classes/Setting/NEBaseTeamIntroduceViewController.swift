@@ -3,7 +3,7 @@
 // Use of this source code is governed by a MIT license that can be
 // found in the LICENSE file.
 
-import NECommonKit
+import NEChatKit
 import NIMSDK
 import UIKit
 
@@ -32,7 +32,7 @@ open class NEBaseTeamIntroduceViewController: NETeamBaseViewController, UITextVi
   public lazy var clearButton: UIButton = {
     let text = UIButton()
     text.translatesAutoresizingMaskIntoConstraints = false
-    text.setImage(teamCoreLoader.loadImage("clear_btn"), for: .normal)
+    text.setImage(teamUIKitLoader.loadImage("clear_btn"), for: .normal)
     text.addTarget(self, action: #selector(clearText), for: .touchUpInside)
     text.accessibilityIdentifier = "id.clear"
     return text

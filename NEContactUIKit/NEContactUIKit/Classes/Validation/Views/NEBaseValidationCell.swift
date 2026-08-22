@@ -3,7 +3,7 @@
 // Use of this source code is governed by a MIT license that can be
 // found in the LICENSE file.
 
-import NECoreIM2Kit
+import NEChatKit
 import NIMSDK
 import UIKit
 
@@ -78,7 +78,7 @@ open class NEBaseValidationCell: NEBaseContactViewCell {
   open func confige(application: NEAddApplication) {
     // 设置头像
     let url = application.displayUserWithFriend?.user?.avatar
-    let name = application.displayUserWithFriend?.shortName() ?? application.displayUserId ?? ""
+    let name = application.displayUserWithFriend?.shortName(showAlias: false) ?? application.displayUserId ?? ""
     let accountId = application.displayUserWithFriend?.user?.accountId ?? ""
     userHeaderView.configHeadData(headUrl: url, name: name, uid: accountId)
 
@@ -100,7 +100,7 @@ open class NEBaseValidationCell: NEBaseContactViewCell {
   open func confige(teamJoinAction: NETeamJoinAction) {
     // 设置头像
     let url = teamJoinAction.displayUserWithFriend?.user?.avatar
-    let name = teamJoinAction.displayUserWithFriend?.shortName() ?? teamJoinAction.displayUserId
+    let name = teamJoinAction.displayUserWithFriend?.shortName(showAlias: false) ?? teamJoinAction.displayUserId
     let accountId = teamJoinAction.displayUserWithFriend?.user?.accountId ?? ""
     userHeaderView.configHeadData(headUrl: url, name: name, uid: accountId)
 

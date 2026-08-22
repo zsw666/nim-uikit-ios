@@ -3,7 +3,6 @@
 // found in the LICENSE file.
 
 import NEChatKit
-import NECoreIM2Kit
 import UIKit
 
 public typealias FusionContactCallBack = (NSError?) -> Void

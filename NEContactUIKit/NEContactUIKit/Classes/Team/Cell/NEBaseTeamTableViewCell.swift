@@ -2,7 +2,7 @@
 // Use of this source code is governed by a MIT license that can be
 // found in the LICENSE file.
 
-import NECoreIM2Kit
+import NEChatKit
 import UIKit
 
 @objcMembers
@@ -72,15 +72,15 @@ open class NEBaseTeamTableViewCell: UITableViewCell {
   }
 
   open func setModel(_ model: Any) {
-    guard let team = model as? NETeam else {
+    guard let team = model as? V2NIMTeam else {
       return
     }
 
-    titleLabel.text = team.teamName
+    titleLabel.text = team.name
 
-    let url = team.avatarUrl
-    let name = team.v2Team?.getShortName() ?? ""
-    let accountId = team.teamId ?? ""
+    let url = team.avatar
+    let name = team.getShortName()
+    let accountId = team.teamId
     userHeaderView.configHeadData(headUrl: url, name: name, uid: accountId)
   }
 }

@@ -2,7 +2,7 @@
 // Use of this source code is governed by a MIT license that can be
 // found in the LICENSE file.
 
-import NECommonUIKit
+import NEBaseUIKit
 import UIKit
 
 @objcMembers
@@ -21,7 +21,7 @@ open class NEBaseLanguageCell: CornerCell {
   public lazy var selectedImageView: UIImageView = {
     let imageView = UIImageView()
     imageView.translatesAutoresizingMaskIntoConstraints = false
-    imageView.image = chatCoreLoader.loadImage("chat_map_select")
+    imageView.image = chatUIKitLoader.loadImage("chat_map_select")
     imageView.isHidden = true
     return imageView
   }()

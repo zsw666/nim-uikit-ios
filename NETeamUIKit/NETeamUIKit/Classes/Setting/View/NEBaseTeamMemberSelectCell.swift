@@ -2,7 +2,7 @@
 // Use of this source code is governed by a MIT license that can be
 // found in the LICENSE file.
 
-import NECommonUIKit
+import NEBaseUIKit
 import UIKit
 
 @objcMembers
@@ -58,8 +58,8 @@ open class NEBaseTeamMemberSelectCell: UITableViewCell {
     checkImageView.isHighlighted = model?.isSelected ?? false
 
     let url = model?.member?.nimUser?.user?.avatar
-    let name = model?.member?.getShortName(model?.member?.showNickInTeam() ?? "") ?? ""
     let accountId = model?.member?.nimUser?.user?.accountId ?? ""
+    let name = model?.member?.getShortName(model?.member?.nimUser?.showName(false) ?? accountId) ?? ""
     headerView.configHeadData(headUrl: url, name: name, uid: accountId)
     nameLabel.text = model?.member?.atNameInTeam()
   }

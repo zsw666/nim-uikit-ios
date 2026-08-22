@@ -111,10 +111,6 @@ open class FunHistoryMessageController: NEBaseHistorySearchController {
       model.offset = CGFloat(subHeight)
     }
 
-    if model.isReply {
-      model.offset = subHeight + fun_chat_reply_height + chat_content_margin
-    }
-
     if model.type == .rtcCallRecord {
       model.contentSize = CGSize(width: contentWidth, height: contentHeight - 2)
       model.offset = -2

@@ -5,7 +5,6 @@
 
 import Foundation
 import NEChatKit
-import NECommonKit
 import NIMSDK
 
 @objcMembers
@@ -39,6 +38,9 @@ open class MessageAIStreamModel: MessageTextModel {
     let mulAttr = NEMarkdownParser.parse(message?.text ?? "")
     attributeStr = NSMutableAttributedString(attributedString: mulAttr)
     resetHeight()
+    if ChatMessageHelper.isAIStreamLoading(message) {
+      resetWH(24, 24)
+    }
     offset = 0
   }
 

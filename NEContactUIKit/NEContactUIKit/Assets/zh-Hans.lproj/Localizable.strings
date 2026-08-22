@@ -12,6 +12,7 @@
 "remove_black" = "解除";
 
 "blacklist"="黑名单";
+"no_blacklist"="暂无黑名单";
 "my_teams"="我的群聊";
 "my_ai_user"="我的数字人";
 "my_ai_robot"="我的机器人";

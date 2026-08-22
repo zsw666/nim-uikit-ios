@@ -3,9 +3,9 @@
 // Use of this source code is governed by a MIT license that can be
 // found in the LICENSE file.
 
+import NEChatKit
 import NEChatUIKit
-import NECommonUIKit
-import NECoreIM2Kit
+import NEBaseUIKit
 import NIMSDK
 import UIKit
 
@@ -31,7 +31,7 @@ open class NEBaseTeamSettingViewController: NETeamBaseViewController, UICollecti
   /// 是否正在请求数据
   var isRequestingData = false
 
-  var className = "TeamSettingViewController"
+  var logClassName = "TeamSettingViewController"
 
   public var cellClassDic = [Int: NEBaseTeamSettingCell.Type]()
 
@@ -179,7 +179,7 @@ open class NEBaseTeamSettingViewController: NETeamBaseViewController, UICollecti
     weak var weakSelf = self
     viewModel.getTeamWithMembers(tid) { error in
       NEALog.infoLog(
-        ModuleName + " " + self.className,
+        ModuleName + " " + self.logClassName,
         desc: "CALLBACK getTeamInfo " + (error?.localizedDescription ?? "no error")
       )
       if let err = error {
@@ -480,7 +480,7 @@ open class NEBaseTeamSettingViewController: NETeamBaseViewController, UICollecti
       view.neMakeToastActivity(.center)
       viewModel.dismissTeam(tid) { error in
         NEALog.infoLog(
-          ModuleName + " " + self.className,
+          ModuleName + " " + self.logClassName,
           desc: "CALLBACK dismissTeam " + (error?.localizedDescription ?? "no error")
         )
         weakSelf?.view.neHideToastActivity()
@@ -506,7 +506,7 @@ open class NEBaseTeamSettingViewController: NETeamBaseViewController, UICollecti
       view.neMakeToastActivity(.center)
       viewModel.leaveTeam(tid) { [weak self] error in
         NEALog.infoLog(
-          ModuleName + " " + (self?.className ?? "TeamSettingViewController"),
+          ModuleName + " " + (self?.logClassName ?? "TeamSettingViewController"),
           desc: "CALLBACK quitTeam " + (error?.localizedDescription ?? "no error")
         )
         self?.view.neHideToastActivity()

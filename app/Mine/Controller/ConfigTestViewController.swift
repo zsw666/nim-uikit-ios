@@ -3,8 +3,8 @@
 // Use of this source code is governed by a MIT license that can be
 // found in the LICENSE file.
 
+import NEChatKit
 import NEChatUIKit
-import NECoreKit
 import NETeamUIKit
 import UIKit
 
@@ -106,6 +106,15 @@ class ConfigTestViewController: NEBaseViewController, UITableViewDelegate,
       IMKitConfigCenter.shared.enableTopMessage = isOpen
     }
     model.cellModels.append(showMessageTop)
+
+    let conversationGroup = SettingCellModel()
+    conversationGroup.cellName = "会话分组"
+    conversationGroup.type = SettingCellType.SettingSwitchCell.rawValue
+    conversationGroup.switchOpen = IMKitConfigCenter.shared.enableConversationGroup
+    conversationGroup.swichChange = { isOpen in
+      IMKitConfigCenter.shared.enableConversationGroup = isOpen
+    }
+    model.cellModels.append(conversationGroup)
 
     let showOnlineStatus = SettingCellModel()
     showOnlineStatus.cellName = "显示在线状态"

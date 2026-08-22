@@ -76,7 +76,7 @@ open class AIChatViewController: UIViewController {
   }()
 
   public lazy var loadDataView: NELottieAnimationView = {
-    let view = NELottieAnimationView(name: "ai_chat_loading", bundle: chatCoreLoader.bundle)
+    let view = NELottieAnimationView(name: "ai_chat_loading", bundle: chatUIKitLoader.bundle)
     view.translatesAutoresizingMaskIntoConstraints = false
     view.loopMode = .loop
     view.contentMode = .center

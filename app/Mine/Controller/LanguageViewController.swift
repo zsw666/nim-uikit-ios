@@ -3,9 +3,9 @@
 // Use of this source code is governed by a MIT license that can be
 // found in the LICENSE file.
 
+import NEChatKit
 import NEChatUIKit
-import NECommonUIKit
-import NECoreKit
+import NEBaseUIKit
 import NETeamUIKit
 import UIKit
 
@@ -81,8 +81,8 @@ class LanguageViewController: NEBaseViewController, UITableViewDelegate,
   }
 
   @objc func saveButtonAction() {
-    if let lan = selectedModel?.defaultHeadData,
-       let lanType = NEAppLanguage(rawValue: lan) {
+    if let lan = selectedModel?.defaultHeadData {
+      let lanType: NEAppLanguage = lan == "zh-Hans" ? .chinese : .english
       NEAppLanguageUtil.setCurrentLanguage(lanType)
       NotificationCenter.default.post(
         name: NENotificationName.changeLanguage,

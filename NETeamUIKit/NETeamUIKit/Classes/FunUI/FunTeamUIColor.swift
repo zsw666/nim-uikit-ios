@@ -3,7 +3,7 @@
 // found in the LICENSE file.
 
 import Foundation
-import NECommonKit
+import NEChatKit
 
 extension UIColor {
   static let funTeamMemberDividerLine = UIColor(hexString: "#E4E9F2")

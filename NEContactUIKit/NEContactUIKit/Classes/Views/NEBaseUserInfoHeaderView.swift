@@ -3,8 +3,8 @@
 // Use of this source code is governed by a MIT license that can be
 // found in the LICENSE file.
 
-import NECommonUIKit
-import NECoreIM2Kit
+import NEChatKit
+import NEBaseUIKit
 import UIKit
 
 @objcMembers
@@ -137,7 +137,7 @@ open class NEBaseUserInfoHeaderView: UIView {
 
     // avatar
     let url = userFriend.user?.avatar
-    let name = userFriend.shortName() ?? ""
+    let name = userFriend.shortName(showAlias: false) ?? ""
     let accountId = userFriend.user?.accountId ?? ""
     userHeaderView.configHeadData(headUrl: url, name: name, uid: accountId)
 

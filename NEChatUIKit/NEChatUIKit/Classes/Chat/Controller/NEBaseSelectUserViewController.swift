@@ -4,7 +4,6 @@
 // found in the LICENSE file.
 
 import NEChatKit
-import NECoreIM2Kit
 import NIMSDK
 import UIKit
 
@@ -21,7 +20,7 @@ open class NEBaseSelectUserViewController: NEChatBaseViewController, UITableView
   //// 是否展示自己
   private var showSelf = true
   private var showTeamMembers: Bool = false
-  var className = "SelectUserViewController"
+  var logClassName = "SelectUserViewController"
   var isShowAtAll = true
 
   public init(conversationId: String, showSelf: Bool = true, showTeamMembers: Bool = false) {
@@ -136,7 +135,7 @@ open class NEBaseSelectUserViewController: NEChatBaseViewController, UITableView
     viewModel.getTeamMembers(teamId) { [weak self] error, team in
       NEALog.infoLog(NEBaseSelectUserViewController.className() + " [Performance]", desc: #function + " onSuccess, timestamp: \(Date().timeIntervalSince1970)")
       NEALog.infoLog(
-        ModuleName + " " + (self?.className ?? "SelectUserViewController"),
+        ModuleName + " " + (self?.logClassName ?? "SelectUserViewController"),
         desc: "CALLBACK fetchTeamMembers " + (error?.localizedDescription ?? "no error")
       )
       if error != nil {

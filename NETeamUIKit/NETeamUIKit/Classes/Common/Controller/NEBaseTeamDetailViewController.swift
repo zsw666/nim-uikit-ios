@@ -4,8 +4,6 @@
 // found in the LICENSE file.
 
 import NEChatKit
-import NECoreIM2Kit
-import NECoreKit
 import NIMSDK
 import UIKit
 
@@ -14,7 +12,7 @@ import UIKit
 open class NEBaseTeamDetailViewController: NETeamBaseViewController, UITableViewDelegate,
   UITableViewDataSource {
   var team: V2NIMTeam?
-  var className = "TeamDetailViewController"
+  var logClassName = "TeamDetailViewController"
 
   var data = [[TeamDetailItem]]()
   public let viewModel = TeamDetailViewModel()
@@ -38,6 +36,13 @@ open class NEBaseTeamDetailViewController: NETeamBaseViewController, UITableView
   override open func viewDidLoad() {
     super.viewDidLoad()
     commonUI()
+    viewModel.teamJoined = { [weak self] joinedTeam in
+      guard joinedTeam.teamId == self?.team?.teamId else {
+        return
+      }
+      self?.team = joinedTeam
+      self?.loadData()
+    }
     loadData()
   }
 
@@ -222,7 +227,7 @@ open class NEBaseTeamDetailViewController: NETeamBaseViewController, UITableView
     if let teamId = team?.teamId {
       viewModel.applyJoinTeam(teamId) { team, error in
         NEALog.infoLog(
-          self.className,
+          self.logClassName,
           desc: "CALLBACK addFriend " + (error?.localizedDescription ?? "no error")
         )
         if let err = error as? NSError {

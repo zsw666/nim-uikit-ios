@@ -3,9 +3,7 @@
 // Use of this source code is governed by a MIT license that can be
 // found in the LICENSE file.
 
-import NECommonKit
-import NECoreIM2Kit
-import NECoreKit
+import NEChatKit
 import UIKit
 
 @objcMembers
@@ -106,11 +104,21 @@ open class NEBaseBlackListViewController: NEContactBaseViewController, UITableVi
       tableView.rightAnchor.constraint(equalTo: view.rightAnchor),
       tableView.bottomAnchor.constraint(equalTo: view.bottomAnchor),
     ])
+
+    emptyView.setText(localizable("no_blacklist"))
+    view.addSubview(emptyView)
+    NSLayoutConstraint.activate([
+      emptyView.topAnchor.constraint(equalTo: tableView.topAnchor),
+      emptyView.bottomAnchor.constraint(equalTo: tableView.bottomAnchor),
+      emptyView.leftAnchor.constraint(equalTo: tableView.leftAnchor),
+      emptyView.rightAnchor.constraint(equalTo: tableView.rightAnchor),
+    ])
   }
 
   open func loadData() {
     viewModel.getBlackList()
     tableView.reloadData()
+    emptyView.isHidden = !viewModel.blockList.isEmpty
   }
 
   open func tableView(_ tableView: UITableView, numberOfRowsInSection section: Int) -> Int {
@@ -173,5 +181,6 @@ open class NEBaseBlackListViewController: NEContactBaseViewController, UITableVi
   /// 重新加载表格
   open func tableViewReload() {
     tableView.reloadData()
+    emptyView.isHidden = !viewModel.blockList.isEmpty
   }
 }

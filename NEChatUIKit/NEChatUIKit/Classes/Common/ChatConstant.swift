@@ -5,14 +5,11 @@
 
 import Foundation
 import NEChatKit
-@_exported import NECommonKit
-@_exported import NECommonUIKit
-@_exported import NECoreIM2Kit
-@_exported import NECoreKit
+@_exported import NEBaseUIKit
 
-public let chatCoreLoader = CommonLoader<NEChatBaseViewController>()
+public let chatUIKitLoader = NEChatKitResourceLoader<NEChatBaseViewController>()
 public func chatLocalizable(_ key: String) -> String {
-  chatCoreLoader.localizable(key)
+  chatUIKitLoader.localizable(key)
 }
 
 public func getJSONStringFromDictionary(_ dictionary: [String: Any]) -> String {

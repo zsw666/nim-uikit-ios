@@ -3,8 +3,7 @@
 // found in the LICENSE file.
 
 import NEChatKit
-import NECommonUIKit
-import NECoreKit
+import NEBaseUIKit
 import UIKit
 
 @objcMembers
@@ -151,7 +150,7 @@ extension FunContactViewController {
 
     if ContactUIConfig.shared.showTitleBarRightIcon {
       let addItem = UIBarButtonItem(
-        image: ContactUIConfig.shared.titleBarRightRes ?? contactCoreLoader.loadImage("fun_nav_add"),
+        image: ContactUIConfig.shared.titleBarRightRes ?? contactUIKitLoader.loadImage("fun_nav_add"),
         style: .plain,
         target: self,
         action: #selector(goToFindFriend)
@@ -159,7 +158,7 @@ extension FunContactViewController {
       addItem.tintColor = UIColor(hexString: "333333")
 
       navigationItem.rightBarButtonItems = [addItem]
-      navigationView.addBtn.setImage(ContactUIConfig.shared.titleBarRightRes ?? contactCoreLoader.loadImage("fun_nav_add"), for: .normal)
+      navigationView.addBtn.setImage(ContactUIConfig.shared.titleBarRightRes ?? contactUIKitLoader.loadImage("fun_nav_add"), for: .normal)
     } else {
       navigationView.addBtn.isHidden = true
     }

@@ -5,8 +5,6 @@
 
 import Foundation
 import NEChatKit
-import NECoreIM2Kit
-import NECoreKit
 import UIKit
 
 /// 转发-选择页面 TableViewCell - 基类
@@ -111,8 +109,10 @@ open class NEBaseSelectCell: NEBaseContactViewCell {
     }
 
     let url = model.avatar
-    let name = NEFriendUserCache.getShortName(model.name ?? "")
     let accountId = V2NIMConversationIdUtil.conversationTargetId(model.conversationId ?? "") ?? ""
+    let name = model.avatarName
+      ?? NEFriendUserCache.shared.getFriendInfo(accountId)?.user?.name
+      ?? accountId
     userHeaderView.configHeadData(headUrl: url, name: name, uid: accountId)
   }
 

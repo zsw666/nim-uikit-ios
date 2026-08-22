@@ -3,7 +3,6 @@
 // found in the LICENSE file.
 
 import NEChatKit
-import NECoreIM2Kit
 import UIKit
 
 /// 转发-多选-已选详情页面 TableViewCell -协同版

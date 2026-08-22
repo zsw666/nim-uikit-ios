@@ -4,7 +4,6 @@
 // found in the LICENSE file.
 
 import NEChatKit
-import NECommonKit
 import NIMSDK
 import UIKit
 

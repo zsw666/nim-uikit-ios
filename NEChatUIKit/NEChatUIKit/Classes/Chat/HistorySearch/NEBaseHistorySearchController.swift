@@ -5,7 +5,6 @@
 
 import MJRefresh
 import NEChatKit
-import NECommonKit
 import NIMSDK
 import UIKit
 

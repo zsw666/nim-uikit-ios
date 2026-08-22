@@ -14,6 +14,8 @@ open class MultiSelectModel: NSObject {
   public var name: String?
   // 会话头像
   public var avatar: String?
+  // 无头像时使用的昵称，不使用好友备注
+  var avatarName: String?
   // 是否已选中
   public var isSelected = false
 

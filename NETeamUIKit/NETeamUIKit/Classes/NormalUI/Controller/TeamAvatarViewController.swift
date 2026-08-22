@@ -3,7 +3,7 @@
 // Use of this source code is governed by a MIT license that can be
 // found in the LICENSE file.
 
-import NECommonUIKit
+import NEBaseUIKit
 import NIMSDK
 import UIKit
 
@@ -79,7 +79,7 @@ open class TeamAvatarViewController: NEBaseTeamAvatarViewController {
       withReuseIdentifier: "\(TeamDefaultIconCell.self)",
       for: indexPath
     ) as? TeamDefaultIconCell {
-      cell.iconImageView.image = teamCoreLoader.loadImage("icon_\(indexPath.row)")
+      cell.iconImageView.image = teamUIKitLoader.loadImage("icon_\(indexPath.row)")
       cell.iconImageView.accessibilityIdentifier = "id.default\(indexPath.row + 1)"
       return cell
     }

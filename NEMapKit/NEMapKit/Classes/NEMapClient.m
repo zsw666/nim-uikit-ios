@@ -10,9 +10,6 @@
 #import <AMapFoundationKit/AMapFoundationKit.h>
 #import <AMapLocationKit/AMapLocationKit.h>
 #import <NEChatKit/NEChatKit-Swift.h>
-#import <NECommonKit/NECommonKit-Swift.h>
-
-#import <NECoreKit/NECoreKit-Swift.h>
 #import <NEMapKit/NEMapKit-Swift.h>
 
 typedef void (^SearchCompletion)(NSArray<NELocaitonModel *> *, NSError *);

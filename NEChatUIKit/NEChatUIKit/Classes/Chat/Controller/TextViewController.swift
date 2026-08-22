@@ -3,7 +3,7 @@
 // found in the LICENSE file.
 
 import Foundation
-import NECommonKit
+import NEChatKit
 
 @objcMembers
 open class TextViewController: NEChatBaseViewController, LinkableLabelProtocol {

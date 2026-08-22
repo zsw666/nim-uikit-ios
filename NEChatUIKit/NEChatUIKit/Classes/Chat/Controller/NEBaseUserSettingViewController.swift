@@ -4,7 +4,6 @@
 // found in the LICENSE file.
 
 import NEChatKit
-import NECommonKit
 import NIMSDK
 import UIKit
 
@@ -12,6 +11,8 @@ import UIKit
 open class NEBaseUserSettingViewController: NEChatBaseViewController,
   UITableViewDataSource, UITableViewDelegate {
   public var userId: String?
+  public var fromBotSubSession = false
+  public var botSubSessionTopic: V2NIMTopic?
 
   let viewModel = UserSettingViewModel()
 
@@ -27,7 +28,7 @@ open class NEBaseUserSettingViewController: NEChatBaseViewController,
   public lazy var addButton: ExpandButton = {
     let button = ExpandButton()
     button.translatesAutoresizingMaskIntoConstraints = false
-    button.setImage(chatCoreLoader.loadImage("setting_add"), for: .normal)
+    button.setImage(chatUIKitLoader.loadImage("setting_add"), for: .normal)
     button.accessibilityIdentifier = "id.add"
     return button
   }()
@@ -80,6 +81,7 @@ open class NEBaseUserSettingViewController: NEChatBaseViewController,
   override open func viewDidLoad() {
     super.viewDidLoad()
     viewModel.delegate = self
+    viewModel.fromBotSubSession = fromBotSubSession
     if let uid = userId {
       viewModel.getConversation(uid) { [weak self] error in
         self?.viewModel.getUserSettingModel(uid) { [weak self] in
@@ -94,6 +96,13 @@ open class NEBaseUserSettingViewController: NEChatBaseViewController,
 
   /// 渲染数据开始，在子类中使用
   open func didLoadData() {}
+
+  open func shouldShowAddMemberButton() -> Bool {
+    guard let uid = userId else {
+      return false
+    }
+    return !fromBotSubSession && IMKitConfigCenter.shared.enableTeam && !NEAIRobotManager.shared.isRobot(uid)
+  }
 
   func setupUI() {
     view.backgroundColor = .ne_lightBackgroundColor
@@ -140,13 +149,13 @@ open class NEBaseUserSettingViewController: NEChatBaseViewController,
     tapGesture.numberOfTouchesRequired = 1
 
     let url = viewModel.userInfo?.user?.avatar
-    let name = viewModel.userInfo?.shortName() ?? ""
+    let name = viewModel.userInfo?.shortName(showAlias: false) ?? ""
     let accountId = viewModel.userInfo?.user?.accountId ?? ""
     userHeaderView.configHeadData(headUrl: url, name: name, uid: accountId)
 
     nameLabel.text = viewModel.userInfo?.showName()
     cornerBackView.addSubview(nameLabel)
-    if IMKitConfigCenter.shared.enableTeam {
+    if shouldShowAddMemberButton() {
       NSLayoutConstraint.activate([
         userHeaderView.leftAnchor.constraint(equalTo: cornerBackView.leftAnchor, constant: 16),
         userHeaderView.topAnchor.constraint(equalTo: cornerBackView.topAnchor, constant: 12),

@@ -3,7 +3,7 @@
 // found in the LICENSE file.
 
 import NEChatUIKit
-import NECommonUIKit
+import NEBaseUIKit
 import NIMSDK
 import UIKit
 
@@ -114,7 +114,7 @@ open class FunTeamAvatarViewController: NEBaseTeamAvatarViewController {
       withReuseIdentifier: "\(FunTeamDefaultIconCell.self)",
       for: indexPath
     ) as? FunTeamDefaultIconCell {
-      cell.iconImageView.image = teamCoreLoader.loadImage("fun_icon_\(indexPath.row)")
+      cell.iconImageView.image = teamUIKitLoader.loadImage("fun_icon_\(indexPath.row)")
       cell.iconImageView.accessibilityIdentifier = "id.default\(indexPath.row + 1)"
 
       return cell

@@ -6,7 +6,7 @@ module YXConfig
   end
 
   def self.imuikit_version
-    "10.9.25"
+    "10.9.51"
   end
 
   def self.deployment_target
@@ -27,7 +27,6 @@ module YXConfig
 
   def self.pod_target_xcconfig(s)
     s.pod_target_xcconfig = {
-      "EXCLUDED_ARCHS[sdk=iphonesimulator*]" => "arm64",
       "BUILD_LIBRARY_FOR_DISTRIBUTION" => "YES",
       "APPLICATION_EXTENSION_API_ONLY" => "NO",
       "DEBUG_INFORMATION_FORMAT" => "dwarf-with-dsym"

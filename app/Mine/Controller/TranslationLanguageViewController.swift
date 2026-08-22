@@ -3,8 +3,6 @@
 // found in the LICENSE file.
 
 import NEChatKit
-import NECoreIM2Kit
-import NECoreKit
 import NETeamUIKit
 import NIMSDK
 import UIKit
@@ -17,9 +15,13 @@ class TranslationLanguageViewController: NEBaseViewController, UITableViewDataSo
 
   /// 当前选中的语言码（未保存前为临时值）
   private var selectedCode: String
+  private let originalCode: String
+  private var didSave = false
 
   init() {
-    selectedCode = IMKitConfigCenter.shared.translationTargetLanguage
+    let currentCode = IMKitConfigCenter.shared.translationTargetLanguage
+    selectedCode = currentCode
+    originalCode = currentCode
     super.init(nibName: nil, bundle: nil)
   }
 
@@ -41,7 +43,7 @@ class TranslationLanguageViewController: NEBaseViewController, UITableViewDataSo
 
   override func viewDidLoad() {
     super.viewDidLoad()
-    title = localizable("translation_target_language")
+    title = localizable("translation_item_title")
 
     if NEStyleManager.instance.isNormalStyle() {
       view.backgroundColor = .ne_backgroundColor
@@ -71,8 +73,19 @@ class TranslationLanguageViewController: NEBaseViewController, UITableViewDataSo
     ])
   }
 
+  override func viewWillDisappear(_ animated: Bool) {
+    super.viewWillDisappear(animated)
+
+    // 只有点击保存才提交临时选择，直接返回时恢复进入页面前的配置。
+    guard !didSave, (isMovingFromParent || navigationController?.isBeingDismissed == true) else {
+      return
+    }
+    IMKitConfigCenter.shared.translationTargetLanguage = originalCode
+  }
+
   @objc private func saveAction() {
     // 持久化 + 更新 IMKitConfigCenter
+    didSave = true
     IMKitConfigCenter.shared.translationTargetLanguage = selectedCode
     userDefaults.set(selectedCode, forKey: "translationTargetLanguage")
     navigationController?.popViewController(animated: true)

@@ -2,7 +2,8 @@
 // Use of this source code is governed by a MIT license that can be
 // found in the LICENSE file.
 
-import NECommonUIKit
+import NEChatKit
+import NEBaseUIKit
 import UIKit
 
 public enum TranslateState: Int {
@@ -143,7 +144,7 @@ open class NEAITranslateView: UIView, NEGrowingTextViewDelegate {
   /// 使用文案富文本
   public var useAttributeString: NSMutableAttributedString = {
     let attributeString = NSMutableAttributedString(string: chatLocalizable("translate_use"))
-    if let attachmentImage = chatCoreLoader.loadImage("use_arrow") {
+    if let attachmentImage = chatUIKitLoader.loadImage("use_arrow") {
       let attachment = NSTextAttachment()
       attachment.image = attachmentImage
       attachment.bounds = CGRectMake(0, -2, 10, 13)
@@ -172,7 +173,7 @@ open class NEAITranslateView: UIView, NEGrowingTextViewDelegate {
 
   /// 标题栏 loading 动画
   public lazy var loadingAnimationView: NELottieAnimationView = {
-    let view = NELottieAnimationView(name: "ne_loading_data", bundle: chatCoreLoader.bundle)
+    let view = NELottieAnimationView(name: "ne_loading_data", bundle: chatUIKitLoader.bundle)
     view.translatesAutoresizingMaskIntoConstraints = false
     view.loopMode = .loop
     view.contentMode = .scaleAspectFill
@@ -344,7 +345,7 @@ open class NEAITranslateView: UIView, NEGrowingTextViewDelegate {
       if textView.attributedText.length > 0 {
         if NEChatDetectNetworkTool.shareInstance.manager?.isReachable == false {
           UIApplication.shared.keyWindow?.endEditing(true)
-          UIApplication.shared.keyWindow?.ne_makeToast(commonLocalizable("network_error"))
+          UIApplication.shared.keyWindow?.ne_baseMakeToast(commonLocalizable("network_error"))
           return
         }
         delegate?.didStartClick?()

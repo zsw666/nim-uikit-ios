@@ -3,7 +3,6 @@
 // found in the LICENSE file.
 
 import NEChatKit
-import NECommonKit
 import NEContactUIKit
 import NEConversationUIKit
 import NELocalConversationUIKit
@@ -15,6 +14,8 @@ class NETabBarController: UITabBarController {
   private var contactVC: NEBaseContactViewController?
   private var meVC = MeViewController()
   private var sessionUnreadCount = 0
+  private var sessionUnreadFilter: V2NIMConversationFilter?
+  private var localSessionUnreadFilter: V2NIMLocalConversationFilter?
   private var contactUnreadCount = 0
 
   /// 是通过切换UI风格触发，需要重置会话是否同步完成标志位，因为不是首次登录，已经同步过，同步完成回调不会再触发，正常单皮肤可忽略此逻辑
@@ -36,14 +37,15 @@ class NETabBarController: UITabBarController {
     ContactRepo.shared.addContactListener(self)
     TeamRepo.shared.addTeamListener(self)
     setUpControllers()
-    setUpSessionBadgeValue()
-    setUpContactBadgeValue()
 
     if NIMSDK.shared().v2Option?.enableV2CloudConversation == false {
       LocalConversationRepo.shared.addLocalConversationListener(self)
     } else {
       ConversationRepo.shared.addConversationListener(self)
     }
+
+    setUpSessionBadgeValue()
+    setUpContactBadgeValue()
 
     NotificationCenter.default.addObserver(self, selector: #selector(clearValidationUnreadCount), name: NENotificationName.clearValidationMessageUnreadCount, object: nil)
     NotificationCenter.default.addObserver(self, selector: #selector(changeLanguage), name: NENotificationName.changeLanguage, object: nil)
@@ -57,9 +59,15 @@ class NETabBarController: UITabBarController {
 
   deinit {
     if NIMSDK.shared().v2Option?.enableV2CloudConversation == false {
+      if let filter = localSessionUnreadFilter {
+        LocalConversationRepo.shared.unsubscribeUnreadCountByFilter(filter)
+      }
       LocalConversationRepo.shared.removeLocalConversationListener(self)
     } else {
-      LocalConversationRepo.shared.removeLocalConversationListener(self)
+      if let filter = sessionUnreadFilter {
+        ConversationRepo.shared.unsubscribeUnreadCountByFilter(filter) { _ in }
+      }
+      ConversationRepo.shared.removeConversationListener(self)
     }
 
     ContactRepo.shared.removeContactListener(self)
@@ -188,15 +196,45 @@ class NETabBarController: UITabBarController {
 
   func setUpSessionBadgeValue() {
     if NIMSDK.shared().v2Option?.enableV2CloudConversation == false {
-      sessionUnreadCount = LocalConversationRepo.shared.getTotalUnreadCount()
+      if localSessionUnreadFilter == nil {
+        let filter = V2NIMLocalConversationFilter()
+        filter.ignoreMuted = true
+        localSessionUnreadFilter = filter
+        LocalConversationRepo.shared.addUnreadCountChangeObserver(filter) { _ in }
+      }
+      guard let filter = localSessionUnreadFilter else {
+        return
+      }
+      LocalConversationRepo.shared.getUnreadCountByFilter(filter) { [weak self] count, _ in
+        self?.updateSessionBadge(count ?? 0)
+      }
     } else {
-      sessionUnreadCount = ConversationRepo.shared.getTotalUnreadCount()
+      if sessionUnreadFilter == nil {
+        let filter = V2NIMConversationFilter()
+        filter.ignoreMuted = true
+        sessionUnreadFilter = filter
+        ConversationRepo.shared.subscribeUnreadCountByFilter(filter) { _ in }
+      }
+      guard let filter = sessionUnreadFilter else {
+        return
+      }
+      ConversationRepo.shared.getUnreadCountByFilter(filter) { [weak self] count, _ in
+        self?.updateSessionBadge(count ?? 0)
+      }
     }
+  }
 
-    if sessionUnreadCount > 0 {
-      tabBar.showBadgOn(index: 0, tabbarItemNums: 3)
-    } else {
-      tabBar.hideBadg(on: 0)
+  private func updateSessionBadge(_ count: Int) {
+    DispatchQueue.main.async { [weak self] in
+      guard let self else {
+        return
+      }
+      self.sessionUnreadCount = count
+      if count > 0 {
+        self.tabBar.showBadgOn(index: 0, tabbarItemNums: 3)
+      } else {
+        self.tabBar.hideBadg(on: 0)
+      }
     }
   }
 
@@ -289,6 +327,13 @@ extension NETabBarController: NEConversationListener {
   func onConversationDeleted(_ conversationIds: [String]) {
     refreshSessionBadge()
   }
+
+  func onUnreadCountChangedByFilter(_ filter: V2NIMConversationFilter, _ unreadCount: Int) {
+    guard filter.ignoreMuted, filter.conversationGroupId == nil else {
+      return
+    }
+    updateSessionBadge(unreadCount)
+  }
 }
 
 // MARK: - NELocalConversationListener
@@ -304,5 +349,12 @@ extension NETabBarController: NELocalConversationListener {
 
   func onLocalConversationDeleted(_ conversationIds: [String]) {
     refreshSessionBadge()
+  }
+
+  func onLocalUnreadCountChangedByFilter(_ filter: V2NIMLocalConversationFilter, _ unreadCount: Int) {
+    guard filter.ignoreMuted else {
+      return
+    }
+    updateSessionBadge(unreadCount)
   }
 }

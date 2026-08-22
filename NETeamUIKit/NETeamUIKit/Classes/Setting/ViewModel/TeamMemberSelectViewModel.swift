@@ -4,7 +4,6 @@
 
 import NEChatKit
 import NEChatUIKit
-import NECoreIM2Kit
 import NIMSDK
 import UIKit
 

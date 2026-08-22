@@ -3,7 +3,7 @@
 // found in the LICENSE file.
 
 import NEChatKit
-import NECommonUIKit
+import NEBaseUIKit
 import UIKit
 
 @objcMembers
@@ -43,7 +43,7 @@ open class NEBaseAIRobotListCell: UITableViewCell {
   open func avatarNameSpacing() -> CGFloat { 12 }
   /// 名字字号
   open func nameFont() -> CGFloat { 14 }
-  /// 右侧箭头视图（与群设置 Cell 保持一致，使用 NECommonUIKit arrow_right 资源）
+  /// 右侧箭头视图（与群设置 Cell 保持一致，使用 NEBaseUIKit arrow_right 资源）
   public lazy var arrowView: UIImageView = {
     let imageView = UIImageView(image: coreLoader.loadImage("arrow_right"))
     imageView.translatesAutoresizingMaskIntoConstraints = false

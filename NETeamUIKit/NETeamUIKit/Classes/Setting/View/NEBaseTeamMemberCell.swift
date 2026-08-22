@@ -3,7 +3,7 @@
 // Use of this source code is governed by a MIT license that can be
 // found in the LICENSE file.
 
-import NECommonUIKit
+import NEBaseUIKit
 import UIKit
 
 @objc
@@ -118,8 +118,8 @@ open class NEBaseTeamMemberCell: UITableViewCell {
     currentModel = model
 
     let url = model.nimUser?.user?.avatar
-    let name = model.getShortName(model.showNickInTeam() ?? "")
     let accountId = model.nimUser?.user?.accountId ?? ""
+    let name = model.getShortName(model.nimUser?.showName(false) ?? accountId)
     headerView.configHeadData(headUrl: url, name: name, uid: accountId)
     nameLabel.text = model.atNameInTeam()
   }

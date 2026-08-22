@@ -5,7 +5,6 @@
 
 import MJRefresh
 import NEChatKit
-import NECommonKit
 import NIMSDK
 
 @objc
@@ -16,7 +15,7 @@ public protocol NEBaseLocalConversationControllerDelegate {
 /// 会话列表页面 - 基类
 @objcMembers
 open class NEBaseLocalConversationController: UIViewController, UIGestureRecognizerDelegate {
-  var className = "NEBaseLocalConversationController"
+  var logClassName = "NEBaseLocalConversationController"
   public var deleteButtonBackgroundColor: UIColor = NEConstant.hexRGB(0xA8ABB6)
   public var topButtonBackgroundColor: UIColor = NEConstant.hexRGB(0x337EFF)
 
@@ -393,7 +392,7 @@ open class NEBaseLocalConversationController: UIViewController, UIGestureRecogni
         self?.showToast(err.localizedDescription)
         self?.emptyView.isHidden = false
         NEALog.errorLog(
-          ModuleName + " " + (self?.className ?? ""),
+          ModuleName + " " + (self?.logClassName ?? ""),
           desc: "CALLBACK requestData failed，error = \(error!)"
         )
       } else {
@@ -925,13 +924,13 @@ extension NEBaseLocalConversationController: UITableViewDelegate, UITableViewDat
     if isTop == true {
       viewModel.removeStickTop(conversation: conversation) { error in
         if let err = error {
-          NEALog.errorLog(ModuleName + " " + (weakSelf?.className ?? "LocalConversationController"), desc: "CALLBACK removeStickTopSession failed，error = \(err)")
+          NEALog.errorLog(ModuleName + " " + (weakSelf?.logClassName ?? "LocalConversationController"), desc: "CALLBACK removeStickTopSession failed，error = \(err)")
           completion(error)
 
           return
         } else {
           NEALog.infoLog(
-            ModuleName + " " + (weakSelf?.className ?? "LocalConversationController"), desc: "✅CALLBACK removeStickTopSession SUCCESS"
+            ModuleName + " " + (weakSelf?.logClassName ?? "LocalConversationController"), desc: "✅CALLBACK removeStickTopSession SUCCESS"
           )
           weakSelf?.reloadTableView()
           completion(nil)
@@ -942,13 +941,13 @@ extension NEBaseLocalConversationController: UITableViewDelegate, UITableViewDat
       viewModel.addStickTop(conversation: conversation) { error in
         if let err = error {
           NEALog.errorLog(
-            ModuleName + " " + (weakSelf?.className ?? "LocalConversationController"),
+            ModuleName + " " + (weakSelf?.logClassName ?? "LocalConversationController"),
             desc: "CALLBACK addStickTopSession failed，error = \(err)"
           )
           completion(error)
           return
         } else {
-          NEALog.infoLog(ModuleName + " " + (weakSelf?.className ?? "LocalConversationController"),
+          NEALog.infoLog(ModuleName + " " + (weakSelf?.logClassName ?? "LocalConversationController"),
                          desc: "✅CALLBACK addStickTopSession callback SUCCESS")
           weakSelf?.reloadTableView()
           completion(nil)
@@ -971,6 +970,32 @@ extension NEBaseLocalConversationController {
 
     // 路由跳转到聊天页面
     if conversation.type == .CONVERSATION_TYPE_P2P {
+      if let sessionId = V2NIMConversationIdUtil.conversationTargetId(conversationId) {
+        NEAIRobotManager.shared.checkIfRobot(sessionId) { [weak self] isRobot in
+          guard let self = self else {
+            return
+          }
+          if isRobot {
+            Router.shared.use(
+              PushBotSubSessionListRouter,
+              parameters: ["nav": self.navigationController as Any,
+                           "conversationId": conversationId,
+                           "sessionId": sessionId,
+                           "animated": false],
+              closure: nil
+            )
+          } else {
+            Router.shared.use(
+              PushP2pChatVCRouter,
+              parameters: ["nav": self.navigationController as Any,
+                           "conversationId": conversationId as Any,
+                           "animated": false],
+              closure: nil
+            )
+          }
+        }
+        return
+      }
       Router.shared.use(
         PushP2pChatVCRouter,
         parameters: ["nav": navigationController as Any,

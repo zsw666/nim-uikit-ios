@@ -5,8 +5,6 @@
 import CoreMedia
 import Foundation
 import NEChatKit
-import NECoreIM2Kit
-import NECoreKit
 
 @objcMembers
 open class ContactUserViewModel: NSObject {

@@ -140,6 +140,7 @@ open class NormalChatViewController: ChatViewController {
     if chatInputView.chatInpuMode == .multipleReturn {
       if replyView.superview != nil {
         replyView.removeFromSuperview()
+        updateTableViewForReplyView(isVisible: false)
       }
     }
   }
@@ -147,22 +148,24 @@ open class NormalChatViewController: ChatViewController {
   // 切换到单行输入框如果有回复显示回复视图
   func checkAndRestoreReplyView() {
     if viewModel.isReplying == true, replyView.superview == nil {
+      let shouldScrollToBottom = isCloseToBottom()
       view.addSubview(replyView)
       if IMKitConfigCenter.shared.enableAIUser {
         NSLayoutConstraint.activate([
           replyView.leadingAnchor.constraint(equalTo: translateLanguageView.leadingAnchor),
           replyView.trailingAnchor.constraint(equalTo: translateLanguageView.trailingAnchor),
           replyView.bottomAnchor.constraint(equalTo: translateLanguageView.topAnchor),
-          replyView.heightAnchor.constraint(equalToConstant: 36),
+          replyView.heightAnchor.constraint(equalToConstant: inputReplyViewHeight),
         ])
       } else {
         NSLayoutConstraint.activate([
           replyView.leadingAnchor.constraint(equalTo: chatInputView.leadingAnchor),
           replyView.trailingAnchor.constraint(equalTo: chatInputView.trailingAnchor),
           replyView.bottomAnchor.constraint(equalTo: chatInputView.topAnchor),
-          replyView.heightAnchor.constraint(equalToConstant: 36),
+          replyView.heightAnchor.constraint(equalToConstant: inputReplyViewHeight),
         ])
       }
+      updateTableViewForReplyView(isVisible: true, scrollToBottom: shouldScrollToBottom)
     }
   }
 
@@ -214,37 +217,54 @@ open class NormalChatViewController: ChatViewController {
 
   /// Normal 皮肤：统一的翻译高度/宽度更新 + reload + 滚动（autoTranslationDidFinish / triggerAutoTranslateHistory 共用）
   override open func applyTranslationHeightAndReload(index: Int, textModel: MessageTextModel?, indexPath: IndexPath) {
+    let scrollTarget = translationScrollTarget(for: indexPath)
     if let textModel = textModel {
       let bubbleH = textModel.estimateTranslationBubbleHeight()
       if bubbleH > 0, textModel.addedTranslationHeight == 0 {
         let translationW = textModel.estimateTranslationTextWidth() + chat_content_margin * 2
-        let newWidth = max(textModel.contentSize.width, translationW)
+        let baseWidth = textModel.translationBaseContentWidth > 0
+          ? textModel.translationBaseContentWidth
+          : textModel.contentSize.width
+        let newWidth = max(baseWidth, translationW)
         textModel.contentSize = CGSize(width: newWidth,
                                        height: textModel.contentSize.height + bubbleH)
         textModel.height += bubbleH
         textModel.addedTranslationHeight = bubbleH
       }
     }
-    tableViewReloadIndexs([indexPath])
-    scrollToShowTranslationIfNeeded(indexPath)
+    tableViewReloadIndexs([indexPath]) { [weak self] in
+      self?.scrollToShowTranslationIfNeeded(scrollTarget)
+    }
   }
 
   /// 翻译成功后同时更新 model.contentSize.height（气泡高度）和 model.height（行高）
   override open func translateMessage() {
-    if NEChatDetectNetworkTool.shareInstance.manager?.isReachable == false {
+    guard let textModel = viewModel.operationModel as? MessageTextModel else { return }
+
+    // 已有当前目标语言的译文时，直接展示缓存，不应被断网状态拦截。
+    let targetLanguage = IMKitConfigCenter.shared.translationTargetLanguage
+    let hasCachedTranslation = textModel.translationInfo?.targetLanguage == targetLanguage &&
+      !(textModel.translationInfo?.translatedText.isEmpty ?? true)
+    if !hasCachedTranslation,
+       NEChatDetectNetworkTool.shareInstance.manager?.isReachable == false {
       showToast(commonLocalizable("network_error"))
       return
     }
-    guard let textModel = viewModel.operationModel as? MessageTextModel else { return }
+
     viewModel.performTranslation(model: textModel) { [weak self] index, error in
       guard let self = self else { return }
       if error != nil {
         self.showToast(chatLocalizable("chat_translate_failed"))
         return
       }
+      let indexPath = index >= 0 ? IndexPath(row: index, section: 0) : nil
+      let scrollTarget = indexPath.flatMap { self.translationScrollTarget(for: $0) }
       // 先还原旧译文占用的高度（语言切换后译文高度可能不同）
       if textModel.addedTranslationHeight > 0 {
-        textModel.contentSize = CGSize(width: textModel.contentSize.width,
+        let baseWidth = textModel.translationBaseContentWidth > 0
+          ? textModel.translationBaseContentWidth
+          : textModel.contentSize.width
+        textModel.contentSize = CGSize(width: baseWidth,
                                        height: textModel.contentSize.height - textModel.addedTranslationHeight)
         textModel.height -= textModel.addedTranslationHeight
         textModel.addedTranslationHeight = 0
@@ -253,14 +273,20 @@ open class NormalChatViewController: ChatViewController {
       if bubbleH > 0 {
         // 宽度取原文/译文最大值
         let translationW = textModel.estimateTranslationTextWidth() + chat_content_margin * 2
-        let newWidth = max(textModel.contentSize.width, translationW)
+        let baseWidth = textModel.translationBaseContentWidth > 0
+          ? textModel.translationBaseContentWidth
+          : textModel.contentSize.width
+        let newWidth = max(baseWidth, translationW)
         textModel.contentSize = CGSize(width: newWidth,
                                        height: textModel.contentSize.height + bubbleH)
         textModel.height += bubbleH
         textModel.addedTranslationHeight = bubbleH
       }
       if index >= 0 {
-        self.tableViewReloadIndexs([IndexPath(row: index, section: 0)])
+        guard let indexPath = indexPath else { return }
+        self.tableViewReloadIndexs([indexPath]) { [weak self] in
+          self?.scrollToShowTranslationIfNeeded(scrollTarget)
+        }
       }
     }
   }
@@ -270,12 +296,16 @@ open class NormalChatViewController: ChatViewController {
   /// 隐藏译文时还原气泡高度和行高（Normal 皮肤）
   override open func hideTranslationMessage() {
     guard let textModel = viewModel.operationModel as? MessageTextModel else { return }
+    let baseWidth = textModel.translationBaseContentWidth > 0
+      ? textModel.translationBaseContentWidth
+      : textModel.contentSize.width
     if textModel.addedTranslationHeight > 0 {
-      textModel.contentSize = CGSize(width: textModel.contentSize.width,
+      textModel.contentSize = CGSize(width: baseWidth,
                                      height: textModel.contentSize.height - textModel.addedTranslationHeight)
       textModel.height -= textModel.addedTranslationHeight
       textModel.addedTranslationHeight = 0
     }
+    textModel.contentSize.width = baseWidth
     viewModel.hideTranslation(model: textModel) { [weak self] index in
       guard let self = self else { return }
       if index >= 0 {

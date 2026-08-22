@@ -3,6 +3,7 @@
 // Use of this source code is governed by a MIT license that can be
 // found in the LICENSE file.
 
+import NEChatKit
 import NIMSDK
 import UIKit
 
@@ -29,15 +30,29 @@ open class NEBaseConversationListCell: UITableViewCell {
     contentView.addSubview(headImageView)
     contentView.addSubview(onlineView)
     contentView.addSubview(redAngleView)
-    contentView.addSubview(titleLabel)
+    contentView.addSubview(mutedUnreadDotView)
+    contentView.addSubview(titleContentView)
     contentView.addSubview(subTitleLabel)
     contentView.addSubview(timeLabel)
     contentView.addSubview(notifyMsgView)
+
+    robotIconWidthConstraint = robotIconView.widthAnchor.constraint(equalToConstant: 0)
+    robotIconWidthConstraint?.isActive = true
+    NSLayoutConstraint.activate([
+      robotIconView.heightAnchor.constraint(equalToConstant: 18),
+      robotIconView.centerYAnchor.constraint(equalTo: titleLabel.centerYAnchor),
+    ])
 
     NSLayoutConstraint.activate([
       redAngleView.centerXAnchor.constraint(equalTo: headImageView.rightAnchor, constant: -8),
       redAngleView.centerYAnchor.constraint(equalTo: headImageView.topAnchor, constant: 8),
       redAngleView.heightAnchor.constraint(equalToConstant: 18),
+    ])
+    NSLayoutConstraint.activate([
+      mutedUnreadDotView.centerXAnchor.constraint(equalTo: redAngleView.centerXAnchor, constant: 3),
+      mutedUnreadDotView.centerYAnchor.constraint(equalTo: redAngleView.centerYAnchor, constant: -3),
+      mutedUnreadDotView.widthAnchor.constraint(equalToConstant: 8),
+      mutedUnreadDotView.heightAnchor.constraint(equalToConstant: 8),
     ])
 
     NSLayoutConstraint.activate([
@@ -65,7 +80,9 @@ open class NEBaseConversationListCell: UITableViewCell {
   }
 
   open func setOnline(_ online: Bool) {
-    onlineView.isHidden = conversationType != .CONVERSATION_TYPE_P2P || NEAIUserManager.shared.isAIUser(sessionId)
+    onlineView.isHidden = conversationType != .CONVERSATION_TYPE_P2P ||
+      NEAIUserManager.shared.isAIUser(sessionId) ||
+      NEAIRobotManager.shared.isRobot(sessionId)
     onlineView.backgroundColor = online ? UIColor(hexString: "#84ED85") : UIColor(hexString: "#D4D9DA")
   }
 
@@ -90,15 +107,16 @@ open class NEBaseConversationListCell: UITableViewCell {
 
       // p2p head image
       let url = conversationModel.conversation?.avatar
-      let name = conversationModel.conversation?.shortName() ?? ""
+      let name = NEConversationAvatarNameHelper.name(
+        accountId: accountId,
+        conversationName: conversationModel.conversation?.name
+      )
       headImageView.configHeadData(headUrl: url, name: name, uid: accountId)
 
       // p2p nickName
-      if let name = conversationModel.conversation?.name, !name.isEmpty {
-        titleLabel.text = name
-      } else {
-        titleLabel.text = accountId
-      }
+      let displayName = conversationModel.conversation?.name.flatMap { $0.isEmpty ? nil : $0 } ?? accountId
+      configureTitle(displayName, isRobot: NEAIRobotManager.shared.isRobot(sessionId))
+      refreshRobotIconIfNeeded(displayName: displayName)
     } else if conversationModel.conversation?.type == .CONVERSATION_TYPE_TEAM {
       guard let conversationId = conversationModel.conversation?.conversationId,
             let teamId = V2NIMConversationIdUtil.conversationTargetId(conversationId) else {
@@ -113,22 +131,19 @@ open class NEBaseConversationListCell: UITableViewCell {
       headImageView.configHeadData(headUrl: url, name: name, uid: teamId)
 
       // team nickName
-      if let name = conversationModel.conversation?.name, !name.isEmpty {
-        titleLabel.text = name
-      } else {
-        titleLabel.text = teamId
-      }
+      let displayName = conversationModel.conversation?.name.flatMap { $0.isEmpty ? nil : $0 } ?? teamId
+      configureTitle(displayName, isRobot: false)
     }
 
     // notifyForNewMsg
-    if let mute = conversationModel.conversation?.mute {
-      notifyMsgView.isHidden = !mute
-    }
+    let isMuted = conversationModel.conversation?.mute == true
+    notifyMsgView.isHidden = !isMuted
 
     // last message
     if let lastMessage = conversationModel.conversation?.lastMessage {
       let text = contentForConversation(lastMessage: lastMessage)
       let mutaAttri = NSMutableAttributedString()
+      appendBotSubSessionPrefixIfNeeded(to: mutaAttri)
       if let lastContent = conversationModel.lastMessageConent {
         mutaAttri.append(lastContent)
       } else {
@@ -144,22 +159,21 @@ open class NEBaseConversationListCell: UITableViewCell {
         }
       }
       subTitleLabel.attributedText = mutaAttri
+      refreshBotSubSessionPrefixIfNeeded()
     } else {
       subTitleLabel.attributedText = nil
     }
 
     // unRead message count
-    if let unReadCount = conversationModel.conversation?.unreadCount {
-      if unReadCount <= 0 {
-        redAngleView.isHidden = true
-      } else {
-        redAngleView.isHidden = notifyMsgView.isHidden ? false : true
-        if unReadCount <= 99 {
-          redAngleView.text = "\(unReadCount)"
-        } else {
-          redAngleView.text = "99+"
-        }
-      }
+    let unreadCount = conversationModel.unreadCount
+    redAngleView.isHidden = isMuted || unreadCount <= 0
+    mutedUnreadDotView.isHidden = !isMuted || unreadCount <= 0
+    if unreadCount <= 0 {
+      redAngleView.text = nil
+    } else if unreadCount <= 99 {
+      redAngleView.text = "\(unreadCount)"
+    } else {
+      redAngleView.text = "99+"
     }
 
     // time
@@ -198,6 +212,95 @@ open class NEBaseConversationListCell: UITableViewCell {
     return text
   }
 
+  open func appendBotSubSessionPrefixIfNeeded(to content: NSMutableAttributedString) {
+    if conversationType == .CONVERSATION_TYPE_P2P,
+       NEAIRobotManager.shared.isRobot(sessionId) {
+      content.append(botSubSessionPrefixAttributedString())
+    }
+  }
+
+  private func configureTitle(_ title: String, isRobot: Bool) {
+    titleLabel.attributedText = nil
+    titleLabel.text = title
+    robotIconView.isHidden = !isRobot
+    robotIconWidthConstraint?.constant = isRobot ? 22 : 0
+  }
+
+  private func refreshRobotIconIfNeeded(displayName: String) {
+    guard conversationType == .CONVERSATION_TYPE_P2P,
+          !sessionId.isEmpty else {
+      return
+    }
+    let expectedSessionId = sessionId
+    NEAIRobotManager.shared.checkIfRobot(expectedSessionId) { [weak self] isRobot in
+      guard let self,
+            self.conversationType == .CONVERSATION_TYPE_P2P,
+            self.sessionId == expectedSessionId else {
+        return
+      }
+      DispatchQueue.main.async {
+        self.configureTitle(displayName, isRobot: isRobot)
+      }
+    }
+  }
+
+  open func refreshBotSubSessionPrefixIfNeeded() {
+    guard conversationType == .CONVERSATION_TYPE_P2P,
+          !sessionId.isEmpty else {
+      return
+    }
+    let expectedSessionId = sessionId
+    NEAIRobotManager.shared.checkIfRobot(expectedSessionId) { [weak self] isRobot in
+      guard let self,
+            self.conversationType == .CONVERSATION_TYPE_P2P,
+            self.sessionId == expectedSessionId else {
+        return
+      }
+      if isRobot {
+        self.insertBotSubSessionPrefixIfNeeded()
+      } else {
+        self.removeBotSubSessionPrefixIfNeeded()
+      }
+    }
+  }
+
+  private func removeBotSubSessionPrefixIfNeeded() {
+    let prefix = localizable("bot_sub_session_prefix")
+    guard let current = subTitleLabel.attributedText else {
+      return
+    }
+    let range = (current.string as NSString).range(of: prefix)
+    guard range.location != NSNotFound else {
+      return
+    }
+    let content = NSMutableAttributedString(attributedString: current)
+    content.deleteCharacters(in: range)
+    subTitleLabel.attributedText = content
+  }
+
+  open func insertBotSubSessionPrefixIfNeeded() {
+    let prefix = localizable("bot_sub_session_prefix")
+    guard let current = subTitleLabel.attributedText,
+          !current.string.contains(prefix) else {
+      return
+    }
+    let content = NSMutableAttributedString(attributedString: current)
+    let atPrefix = localizable("you_were_mentioned")
+    let insertIndex = content.string.hasPrefix(atPrefix) ? atPrefix.count : 0
+    content.insert(botSubSessionPrefixAttributedString(), at: insertIndex)
+    subTitleLabel.attributedText = content
+  }
+
+  private func botSubSessionPrefixAttributedString() -> NSAttributedString {
+    NSAttributedString(
+      string: localizable("bot_sub_session_prefix"),
+      attributes: [
+        .font: UIFont.systemFont(ofSize: ConversationUIConfig.shared.conversationProperties.itemContentSize > 0 ? ConversationUIConfig.shared.conversationProperties.itemContentSize : 13),
+        .foregroundColor: ConversationUIConfig.shared.conversationProperties.itemContentColor,
+      ]
+    )
+  }
+
   // MARK: lazy Method
 
   public lazy var headImageView: NEUserHeaderView = {
@@ -225,6 +328,16 @@ open class NEBaseConversationListCell: UITableViewCell {
     return label
   }()
 
+  private lazy var mutedUnreadDotView: UIView = {
+    let view = UIView()
+    view.translatesAutoresizingMaskIntoConstraints = false
+    view.backgroundColor = NEConstant.hexRGB(0xF24957)
+    view.layer.cornerRadius = 4
+    view.isHidden = true
+    view.accessibilityIdentifier = "id.mutedUnreadDot"
+    return view
+  }()
+
   /// 在线状态
   public lazy var onlineView: UIView = {
     let view = UIView()
@@ -242,9 +355,36 @@ open class NEBaseConversationListCell: UITableViewCell {
     label.textColor = ConversationUIConfig.shared.conversationProperties.itemTitleColor
     label.font = .systemFont(ofSize: ConversationUIConfig.shared.conversationProperties.itemTitleSize > 0 ? ConversationUIConfig.shared.conversationProperties.itemTitleSize : 16)
     label.text = "Oliver"
+    label.numberOfLines = 1
+    label.lineBreakMode = .byTruncatingTail
+    label.setContentHuggingPriority(.required, for: .horizontal)
+    label.setContentCompressionResistancePriority(.defaultLow, for: .horizontal)
     label.accessibilityIdentifier = "id.name"
     return label
   }()
+
+  public lazy var titleContentView: UIStackView = {
+    let stackView = UIStackView(arrangedSubviews: [titleLabel, robotIconView])
+    stackView.translatesAutoresizingMaskIntoConstraints = false
+    stackView.axis = .horizontal
+    stackView.alignment = .center
+    stackView.spacing = 2
+    stackView.distribution = .fill
+    stackView.setContentHuggingPriority(.required, for: .horizontal)
+    stackView.setContentCompressionResistancePriority(.defaultLow, for: .horizontal)
+    return stackView
+  }()
+
+  public lazy var robotIconView: UIImageView = {
+    let imageView = UIImageView(image: UIImage.ne_imageNamed(name: "robot_icon"))
+    imageView.translatesAutoresizingMaskIntoConstraints = false
+    imageView.contentMode = .scaleAspectFit
+    imageView.setContentCompressionResistancePriority(.required, for: .horizontal)
+    imageView.isHidden = true
+    return imageView
+  }()
+
+  private var robotIconWidthConstraint: NSLayoutConstraint?
 
   // 会话列表外露消息
   public lazy var subTitleLabel: UILabel = {

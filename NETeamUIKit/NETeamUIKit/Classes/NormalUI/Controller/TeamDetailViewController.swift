@@ -3,8 +3,7 @@
 // Use of this source code is governed by a MIT license that can be
 // found in the LICENSE file.
 
-import NECoreIM2Kit
-import NECoreKit
+import NEChatKit
 import NIMSDK
 import UIKit
 
@@ -12,7 +11,7 @@ import UIKit
 @objcMembers
 open class TeamDetailViewController: NEBaseTeamDetailViewController {
   open func initNormal() {
-    className = "TeamDetailViewController"
+    logClassName = "TeamDetailViewController"
   }
 
   override public init(nim_team: V2NIMTeam) {

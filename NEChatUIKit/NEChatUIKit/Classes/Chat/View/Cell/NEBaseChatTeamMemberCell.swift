@@ -4,7 +4,7 @@
 // found in the LICENSE file.
 
 import NEChatKit
-import NECommonUIKit
+import NEBaseUIKit
 import UIKit
 
 @objcMembers
@@ -62,8 +62,8 @@ open class NEBaseChatTeamMemberCell: UITableViewCell {
 
   open func configure(_ model: NETeamMemberInfoModel) {
     let url = model.nimUser?.user?.avatar
-    let name = model.getShortName(model.showNickInTeam() ?? "")
     let accountId = model.nimUser?.user?.accountId ?? ""
+    let name = model.getShortName(model.nimUser?.showName(false) ?? accountId)
     headerView.configHeadData(headUrl: url, name: name, uid: accountId)
     nameLabel.text = model.atNameInTeam()
   }

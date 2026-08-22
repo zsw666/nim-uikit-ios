@@ -3,7 +3,6 @@
 // found in the LICENSE file.
 
 import NEChatKit
-import NECoreKit
 import UIKit
 
 @objcMembers

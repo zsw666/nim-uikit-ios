@@ -2,7 +2,7 @@
 // Use of this source code is governed by a MIT license that can be
 // found in the LICENSE file.
 
-import NECommonUIKit
+import NEBaseUIKit
 import NIMSDK
 import UIKit
 
@@ -30,7 +30,7 @@ open class NEBaseAIRobotBindCell: UITableViewCell {
     return l
   }()
 
-  /// 右侧箭头（与群设置 Cell 保持一致，使用 NECommonUIKit arrow_right 资源）
+  /// 右侧箭头（与群设置 Cell 保持一致，使用 NEBaseUIKit arrow_right 资源）
   public lazy var arrowView: UIImageView = {
     let iv = UIImageView(image: coreLoader.loadImage("arrow_right"))
     iv.translatesAutoresizingMaskIntoConstraints = false

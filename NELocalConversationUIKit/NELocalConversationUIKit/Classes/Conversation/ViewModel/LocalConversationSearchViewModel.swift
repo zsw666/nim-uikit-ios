@@ -3,7 +3,6 @@
 // found in the LICENSE file.
 
 import NEChatKit
-import NECoreIM2Kit
 import NIMSDK
 import UIKit
 
@@ -60,9 +59,10 @@ open class LocalConversationSearchViewModel: NSObject, NETeamListener, NEIMKitCl
     }
     for (_, value) in friendDic {
       if let user = value.userInfo {
-        if user.showName()?.contains(search) == true {
-          friendDatas.append(value)
-        } else if user.user?.accountId?.contains(search) == true {
+        let alias = user.friend?.alias ?? ""
+        let nickname = user.user?.name ?? ""
+        let accountId = user.user?.accountId ?? ""
+        if alias.contains(search) || nickname.contains(search) || accountId.contains(search) {
           friendDatas.append(value)
         }
       }
@@ -112,11 +112,9 @@ open class LocalConversationSearchViewModel: NSObject, NETeamListener, NEIMKitCl
           }
         }
         teams?.forEach { team in
-          if let tid = team.v2Team?.teamId {
-            let model = ConversationSearchListModel()
-            model.team = team.v2Team
-            weakSelf?.teamDic[tid] = model
-          }
+          let model = ConversationSearchListModel()
+          model.team = team
+          weakSelf?.teamDic[team.teamId] = model
         }
         workingGroup.leave()
       }

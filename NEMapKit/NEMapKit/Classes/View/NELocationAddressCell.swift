@@ -10,14 +10,14 @@ import UIKit
 open class NELocationAddressCell: UITableViewCell {
   /// 位置指示图片
   public lazy var locationImgView: UIImageView = {
-    let locationImageView = UIImageView(image: chatCoreLoader.loadImage("chat_location_img"))
+    let locationImageView = UIImageView(image: chatUIKitLoader.loadImage("chat_location_img"))
     locationImageView.translatesAutoresizingMaskIntoConstraints = false
     return locationImageView
   }()
 
   /// 选中图片
   public lazy var selectImgView: UIImageView = {
-    let imgView = UIImageView(image: chatCoreLoader.loadImage("chat_map_select"))
+    let imgView = UIImageView(image: chatUIKitLoader.loadImage("chat_map_select"))
     imgView.translatesAutoresizingMaskIntoConstraints = false
     return imgView
   }()

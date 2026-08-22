@@ -4,8 +4,6 @@
 // found in the LICENSE file.
 
 import NEChatKit
-import NECoreIM2Kit
-import NECoreKit
 import NIMSDK
 import UIKit
 
@@ -15,7 +13,7 @@ open class NEBaseContactUserViewController: NEContactBaseViewController, UITable
   UITableViewDataSource {
   var user: NEUserWithFriend?
   var accountId: String?
-  var className = "ContactUserViewController"
+  var logClassName = "ContactUserViewController"
 
   /// 是否为机器人账号（由 ChatViewController 通过 Router 参数注入）
   /// 若为 true，则名片页展示"去聊天"而非"添加好友"
@@ -79,7 +77,7 @@ open class NEBaseContactUserViewController: NEContactBaseViewController, UITable
       viewModel.getUserInfo(userId) { user, error in
         weakSelf?.view.neHideToastActivity()
         NEALog.infoLog(
-          weakSelf?.className ?? "ContactUserViewController",
+          weakSelf?.logClassName ?? "ContactUserViewController",
           desc: "CALLBACK getUserInfo " + (error?.localizedDescription ?? "no error")
         )
         if let err = error {
@@ -362,13 +360,9 @@ open class NEBaseContactUserViewController: NEContactBaseViewController, UITable
       self?.headerView.setData(user: u)
     }
     navigationController?.pushViewController(remark, animated: true)
-
-    print("edit remarks")
   }
 
-  open func allowNotify(allow: Bool) {
-    print("edit remarks")
-  }
+  open func allowNotify(allow: Bool) {}
 
   open func blackList(isBlack: Bool, completion: @escaping () -> Void) {
     if NEChatDetectNetworkTool.shareInstance.manager?.isReachable == false {
@@ -407,6 +401,21 @@ open class NEBaseContactUserViewController: NEContactBaseViewController, UITable
     }
 
     let conversationId = V2NIMConversationIdUtil.p2pConversationId(accid)
+    let shouldOpenBotSubSession = isRobot || NEAIRobotManager.shared.isRobot(accid)
+    if shouldOpenBotSubSession {
+      Router.shared.use(
+        PushBotSubSessionListRouter,
+        parameters: ["nav": navigationController as Any,
+                     "conversationId": conversationId as Any,
+                     "sessionId": accid,
+                     "sessionName": self.user?.showName() ?? accid,
+                     "removeUserVC": true,
+                     "animated": false],
+        closure: nil
+      )
+      return
+    }
+
     Router.shared.use(
       PushP2pChatVCRouter,
       parameters: ["nav": navigationController as Any,
@@ -426,7 +435,7 @@ open class NEBaseContactUserViewController: NEContactBaseViewController, UITable
     if let userId = user?.user?.accountId {
       viewModel.deleteFriend(account: userId) { error in
         NEALog.infoLog(
-          self.className,
+          self.logClassName,
           desc: "CALLBACK deleteFriend " + (error?.localizedDescription ?? "no error")
         )
         if error != nil {
@@ -477,7 +486,7 @@ open class NEBaseContactUserViewController: NEContactBaseViewController, UITable
     if let account = user?.user?.accountId {
       viewModel.addFriend(account) { error in
         NEALog.infoLog(
-          self.className,
+          self.logClassName,
           desc: "CALLBACK addFriend " + (error?.localizedDescription ?? "no error")
         )
         if let err = error {
@@ -487,7 +496,7 @@ open class NEBaseContactUserViewController: NEContactBaseViewController, UITable
           if NEFriendUserCache.shared.isBlockAccount(account) {
             weakSelf?.viewModel.removeBlackList(account: account) { err in
               NEALog.infoLog(
-                self.className,
+                self.logClassName,
                 desc: #function + "CALLBACK " + (err?.localizedDescription ?? "no error")
               )
             }

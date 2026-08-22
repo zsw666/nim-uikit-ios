@@ -18,8 +18,8 @@ open class NELocationGuideBottomView: UIView {
   lazy var guideButton: UIButton = {
     let button = UIButton()
     button.translatesAutoresizingMaskIntoConstraints = false
-    button.setImage(chatCoreLoader.loadImage("chat_map_path"), for: .normal)
-    button.setImage(chatCoreLoader.loadImage("chat_map_path"), for: .highlighted)
+    button.setImage(chatUIKitLoader.loadImage("chat_map_path"), for: .normal)
+    button.setImage(chatUIKitLoader.loadImage("chat_map_path"), for: .highlighted)
     button.addTarget(self, action: #selector(guideBtnClick), for: .touchUpInside)
     return button
   }()

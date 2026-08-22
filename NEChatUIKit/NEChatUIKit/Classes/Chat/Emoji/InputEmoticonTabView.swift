@@ -3,7 +3,7 @@
 // Use of this source code is governed by a MIT license that can be
 // found in the LICENSE file.
 
-import NECoreIM2Kit
+import NEChatKit
 import UIKit
 
 @objc
@@ -20,7 +20,7 @@ open class InputEmoticonTabView: UIControl {
   public lazy var sendButton: UIButton = {
     let button = UIButton()
     button.translatesAutoresizingMaskIntoConstraints = false
-    button.setTitle(chatCoreLoader.localizable("send"), for: .normal)
+    button.setTitle(chatUIKitLoader.localizable("send"), for: .normal)
     button.titleLabel?.textColor = .white
     button.backgroundColor = UIColor.ne_normalTheme
     button.titleLabel?.font = DefaultTextFont(14)

@@ -23,7 +23,7 @@ Pod::Spec.new do |s|
   s.resource = 'NECommonUIKit/Assets/**/*'
   YXConfig.pod_target_xcconfig(s)
 
-  s.dependency 'NECommonKit'
+  s.dependency 'NEChatKit', YXConfig.imuikit_version
   s.dependency 'SDWebImage'
   
   

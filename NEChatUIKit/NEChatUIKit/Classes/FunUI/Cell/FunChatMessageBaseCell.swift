@@ -182,6 +182,7 @@ open class FunChatMessageBaseCell: NEBaseChatMessageCell {
     let replyLabel = isSend ? replyLabelRight : replyLabelLeft
 
     if model.isRevoked == false,
+       !model.inMultiForward,
        let text = model.replyText,
        let font = replyLabel.font {
       replyLabel.attributedText = NEEmotionTool.getAttWithStr(str: text,

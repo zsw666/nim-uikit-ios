@@ -49,7 +49,7 @@ open class NEChatUIKitClient: NSObject {
 
     if IMKitConfigCenter.shared.enableAIUser == true {
       let translate = NEMoreItemModel()
-      translate.image = UIImage.ne_imageNamed(name: "chat_translation")
+      translate.image = UIImage.ne_imageNamed(name: "chat_input_translation")
       translate.title = chatLocalizable("chat_translate")
       translate.type = .translate
       moreAction.append(translate)
@@ -66,7 +66,21 @@ open class NEChatUIKitClient: NSObject {
 
   /// 获取更多面板数据
   /// - Returns: 返回更多操作数据
+  @nonobjc
   open func getMoreActionData(sessionType: V2NIMConversationType, _ viewController: ChatViewController) -> [NEMoreItemModel] {
+    // CallKit 可能在 ChatUIKit 单例初始化之后才完成注册，且不同组件可能持有独立的服务管理器。
+    // 只要 CallKit 已链接或已完成注册，就在最终菜单生成时补齐音视频入口。
+    let callUIKitAvailable = NSClassFromString("NERtcCallUIKit") != nil ||
+      XKitServiceManager.getInstance().serviceIsRegister("NERtcCallUIKit")
+    if callUIKitAvailable,
+       moreAction.contains(where: { $0.type == .rtc }) == false {
+      let rtc = NEMoreItemModel()
+      rtc.image = UIImage.ne_imageNamed(name: "chat_rtc")
+      rtc.title = chatLocalizable("chat_rtc")
+      rtc.type = .rtc
+      moreAction.append(rtc)
+    }
+
     var more = [NEMoreItemModel]()
     for model in moreAction {
       if model.type != .rtc {
@@ -98,14 +112,32 @@ open class NEChatUIKitClient: NSObject {
   /// 获取图片资源
   /// - Parameter imageName  图片名称
   /// - Returns  图片资源
+  @nonobjc
   open func getImageSource(imageName: String) -> UIImage? {
-    chatCoreLoader.loadImage(imageName)
+    chatUIKitLoader.loadImage(imageName)
   }
 
   /// 获取多语言
   /// - Parameter key  多语言key
   /// - Returns  多语言
+  @nonobjc
   open func getLanguage(key: String) -> String? {
-    chatCoreLoader.localizable(key)
+    chatUIKitLoader.localizable(key)
+  }
+
+  @objc(getMoreActionDataWithSessionType:viewController:)
+  open func objc_getMoreActionData(withSessionType sessionType: V2NIMConversationType,
+                                   viewController: ChatViewController) -> [NEMoreItemModel] {
+    getMoreActionData(sessionType: sessionType, viewController)
+  }
+
+  @objc(getImageSourceWithImageName:)
+  open func objc_getImageSource(withImageName imageName: String) -> UIImage? {
+    getImageSource(imageName: imageName)
+  }
+
+  @objc(getLanguageWithKey:)
+  open func objc_getLanguage(withKey key: String) -> String? {
+    getLanguage(key: key)
   }
 }

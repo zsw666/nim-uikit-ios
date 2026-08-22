@@ -2,8 +2,8 @@
 // Use of this source code is governed by a MIT license that can be
 // found in the LICENSE file.
 
-import NECommonUIKit
-import NECoreIM2Kit
+import NEChatKit
+import NEBaseUIKit
 import NIMSDK
 import UIKit
 

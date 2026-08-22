@@ -3,7 +3,7 @@
 // found in the LICENSE file.
 
 import Foundation
-import NECoreIM2Kit
+import NEChatKit
 import NIMSDK
 
 /// 群信息变更回调协议
@@ -22,7 +22,7 @@ open class TeamInfoViewModel: NSObject, NETeamListener {
   public let teamRepo = TeamRepo.shared
 
   /// 群
-  public var v2Team: V2NIMTeam?
+  public var currentTeam: V2NIMTeam?
 
   /// 代理
   public weak var delegate: NETeamInfoDelegate?
@@ -35,7 +35,7 @@ open class TeamInfoViewModel: NSObject, NETeamListener {
   /// 获取群信息
   /// - Parameter team: 群
   open func getData(_ team: V2NIMTeam?) {
-    v2Team = team
+    currentTeam = team
     NEALog.infoLog(ModuleName + " " + className(), desc: #function + ", teamId:\(team?.teamId ?? "nil")")
     cellDatas.removeAll()
 
@@ -69,7 +69,9 @@ open class TeamInfoViewModel: NSObject, NETeamListener {
   /// 群信息更新
   /// - Parameter team: 群
   open func onTeamInfoUpdated(_ team: V2NIMTeam) {
-    if let teamId = v2Team?.teamId, teamId == team.teamId {
+    if let currentTeam,
+       currentTeam.teamId == team.teamId,
+       currentTeam.teamType == team.teamType {
       getData(team)
       delegate?.teamInfoDidUpdate(team)
     }

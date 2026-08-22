@@ -3,7 +3,6 @@
 // found in the LICENSE file.
 
 import NEChatKit
-import NECommonKit
 import NIMSDK
 import UIKit
 
@@ -35,7 +34,7 @@ open class FunUserSettingViewController: NEBaseUserSettingViewController {
     navigationView.backgroundColor = .white
     navigationView.titleBarBottomLine.isHidden = false
     userHeaderView.layer.cornerRadius = 4.0
-    addButton.setImage(chatCoreLoader.loadImage("fun_setting_add"), for: .normal)
+    addButton.setImage(chatUIKitLoader.loadImage("fun_setting_add"), for: .normal)
     contentTable.rowHeight = 56
   }
 
@@ -61,14 +60,14 @@ open class FunUserSettingViewController: NEBaseUserSettingViewController {
     tap.numberOfTouchesRequired = 1
 
     let url = viewModel.userInfo?.user?.avatar
-    let name = viewModel.userInfo?.shortName() ?? ""
+    let name = viewModel.userInfo?.shortName(showAlias: false) ?? ""
     let accountId = viewModel.userInfo?.user?.accountId ?? ""
     userHeaderView.configHeadData(headUrl: url, name: name, uid: accountId)
 
     nameLabel.text = viewModel.userInfo?.showName()
     cornerBackView.addSubview(nameLabel)
 
-    if IMKitConfigCenter.shared.enableTeam {
+    if shouldShowAddMemberButton() {
       NSLayoutConstraint.activate([
         userHeaderView.leftAnchor.constraint(equalTo: cornerBackView.leftAnchor, constant: 22),
         userHeaderView.topAnchor.constraint(equalTo: cornerBackView.topAnchor, constant: 22),

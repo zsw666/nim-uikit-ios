@@ -3,9 +3,8 @@
 // Use of this source code is governed by a MIT license that can be
 // found in the LICENSE file.
 
-import NECommonKit
-import NECommonUIKit
-import NECoreKit
+import NEChatKit
+import NEBaseUIKit
 import NIMSDK
 import UIKit
 
@@ -39,7 +38,7 @@ open class LocalConversationController: NEBaseLocalConversationController {
 
   override public init(nibName nibNameOrNil: String?, bundle nibBundleOrNil: Bundle?) {
     super.init(nibName: nil, bundle: nil)
-    className = "LocalConversationController"
+    logClassName = "LocalConversationController"
     deleteButtonBackgroundColor = .normalConversationDeleteActionColor
     topButtonBackgroundColor = .normalConversationTopActionColor
     brokenNetworkView.backgroundColor = .normalConversationNetworkBrokenBackgroundColor

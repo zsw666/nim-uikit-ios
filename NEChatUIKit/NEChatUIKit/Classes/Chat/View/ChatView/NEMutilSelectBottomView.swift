@@ -3,6 +3,7 @@
 // found in the LICENSE file.
 
 import Foundation
+import NEChatKit
 import UIKit
 
 @objc

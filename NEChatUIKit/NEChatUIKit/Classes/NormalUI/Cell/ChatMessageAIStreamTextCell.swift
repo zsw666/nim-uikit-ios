@@ -4,13 +4,12 @@
 // found in the LICENSE file.
 
 import NEChatKit
-import NECoreKit
 import UIKit
 
 @objcMembers
 open class ChatMessageAIStreamTextCell: ChatMessageTextCell {
   public lazy var loadingViewLeft: NELottieAnimationView = {
-    let view = NELottieAnimationView(name: "ai_stream_loading_data", bundle: chatCoreLoader.bundle)
+    let view = NELottieAnimationView(name: "ai_stream_loading_data", bundle: chatUIKitLoader.bundle)
     view.translatesAutoresizingMaskIntoConstraints = false
     view.loopMode = .loop
     view.contentMode = .scaleAspectFill
@@ -109,7 +108,7 @@ open class ChatMessageAIStreamTextCell: ChatMessageTextCell {
     let contentLabel = isSend ? contentLabelRight : contentLabelLeft
 
     if IMKitConfigCenter.shared.enableAIStream,
-       model.message?.aiConfig?.aiStreamStatus == .MESSAGE_AI_STREAM_STATUS_PLACEHOLDER {
+       ChatMessageHelper.isAIStreamLoading(model.message) {
       contentLabel.isHidden = true
       loadingViewLeft.isHidden = false
       loadingViewLeft.play()
@@ -121,8 +120,10 @@ open class ChatMessageAIStreamTextCell: ChatMessageTextCell {
       loadingViewLeft.stop()
 
       stopStreamButton.isHidden = model.message?.threadReply?.senderId != IMKitClient.instance.account() ||
+        model.message?.aiConfig == nil ||
         model.message?.aiConfig?.aiStreamStatus != .MESSAGE_AI_STREAM_STATUS_STREAMING
       regenStreamButton.isHidden = model.message?.threadReply?.senderId != IMKitClient.instance.account() ||
+        model.message?.aiConfig == nil ||
         model.message?.aiConfig?.aiStreamStatus == .MESSAGE_AI_STREAM_STATUS_STREAMING
     }
 

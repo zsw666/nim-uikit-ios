@@ -8,7 +8,7 @@ import UIKit
 
 @objcMembers
 open class NETranslateLanguageManager: NSObject {
-  public static var shared = NETranslateLanguageManager()
+  public static let shared = NETranslateLanguageManager()
 
   override private init() {}
 

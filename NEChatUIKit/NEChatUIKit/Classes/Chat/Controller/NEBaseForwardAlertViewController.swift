@@ -4,8 +4,7 @@
 // found in the LICENSE file.
 
 import NEChatKit
-import NECommonKit
-import NECommonUIKit
+import NEBaseUIKit
 import UIKit
 
 @objcMembers

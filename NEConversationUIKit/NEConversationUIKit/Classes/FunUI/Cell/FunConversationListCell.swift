@@ -32,9 +32,9 @@ open class FunConversationListCell: NEBaseConversationListCell {
 
     titleLabel.font = .systemFont(ofSize: ConversationUIConfig.shared.conversationProperties.itemTitleSize > 0 ? ConversationUIConfig.shared.conversationProperties.itemTitleSize : 17)
     NSLayoutConstraint.activate([
-      titleLabel.leftAnchor.constraint(equalTo: headImageView.rightAnchor, constant: 12),
-      titleLabel.rightAnchor.constraint(equalTo: timeLabel.leftAnchor, constant: -5),
-      titleLabel.topAnchor.constraint(equalTo: headImageView.topAnchor, constant: 4),
+      titleContentView.leftAnchor.constraint(equalTo: headImageView.rightAnchor, constant: 12),
+      titleContentView.rightAnchor.constraint(lessThanOrEqualTo: timeLabel.leftAnchor, constant: -5),
+      titleContentView.topAnchor.constraint(equalTo: headImageView.topAnchor, constant: 4),
     ])
 
     contentView.addSubview(bottomLine)

@@ -3,7 +3,7 @@
 // Use of this source code is governed by a MIT license that can be
 // found in the LICENSE file.
 
-import NECoreKit
+import NEChatKit
 import NIMSDK
 import UIKit
 
@@ -113,19 +113,17 @@ open class NEBaseTeamListViewController: NEContactBaseViewController, UITableVie
     if isClickCallBack == true {
       Router.shared.use(
         ContactTeamDataRouter,
-        parameters: ["team": model.v2Team as Any],
+        parameters: ["team": model],
         closure: nil
       )
       navigationController?.popViewController(animated: true)
       return
     }
-    if let teamid = model.teamId {
-      let conversationId = V2NIMConversationIdUtil.teamConversationId(teamid)
-      Router.shared.use(
-        PushTeamChatVCRouter,
-        parameters: ["nav": navigationController as Any, "conversationId": conversationId as Any],
-        closure: nil
-      )
-    }
+    let conversationId = V2NIMConversationIdUtil.teamConversationId(model.teamId)
+    Router.shared.use(
+      PushTeamChatVCRouter,
+      parameters: ["nav": navigationController as Any, "conversationId": conversationId as Any],
+      closure: nil
+    )
   }
 }

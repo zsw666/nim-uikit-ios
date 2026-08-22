@@ -3,7 +3,7 @@
 // Use of this source code is governed by a MIT license that can be
 // found in the LICENSE file.
 
-import NECommonUIKit
+import NEBaseUIKit
 import UIKit
 
 public class MineTableViewCell: UITableViewCell {
@@ -35,7 +35,7 @@ public class MineTableViewCell: UITableViewCell {
 
   /// 箭头图片
   public lazy var arrowImageView: UIImageView = {
-    let imageView = UIImageView(image: appCoreLoader.loadImage("arrow_right"))
+    let imageView = UIImageView(image: coreLoader.loadImage("arrow_right"))
     imageView.translatesAutoresizingMaskIntoConstraints = false
     return imageView
   }()
@@ -76,8 +76,7 @@ public class MineTableViewCell: UITableViewCell {
     ])
 
     NSLayoutConstraint.activate([
-      arrowImageView.rightAnchor.constraint(equalTo: contentView.rightAnchor, constant: -25),
-//            arrow.widthAnchor.constraint(equalToConstant: 15),
+      arrowImageView.rightAnchor.constraint(equalTo: contentView.rightAnchor, constant: -20),
       arrowImageView.centerYAnchor.constraint(equalTo: contentView.centerYAnchor),
     ])
   }

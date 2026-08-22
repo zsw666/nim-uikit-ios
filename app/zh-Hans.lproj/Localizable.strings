@@ -82,12 +82,17 @@
 "account_kicked_offline"="您已被踢下线";
 
 "click_to_report"="点击举报";
+"global_config"="全局配置";
+"private_cloud_config"="私有云环境配置";
+"push_config"="推送配置";
 
 // MARK: 消息翻译设置
 "translation_setting"="翻译";
+"translation_item_title"="将文字翻译为";
+"translation_item_subtitle"="设置消息翻译的目标语言";
 "translation_target_language"="翻译目标语言";
-"auto_translation"="自动翻译";
-"auto_translation_tip"="开启后，收到文本消息将自动翻译";
+"auto_translation"="自动翻译聊天中收到的消息";
+"auto_translation_tip"="开启后，会自动翻译聊天中收到的消息";
 
 // 目标语言名称
 "lang_zh_chs"="中文（简体）";
@@ -101,7 +106,6 @@
 "lang_it"="意大利语";
 "lang_ru"="俄语";
 "lang_pt"="葡萄牙语";
-"lang_ar"="阿拉伯语";
 "lang_th"="泰语";
 "lang_vi"="越南语";
 "lang_id"="印度尼西亚语";

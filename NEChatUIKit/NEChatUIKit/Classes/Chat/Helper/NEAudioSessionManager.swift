@@ -6,7 +6,7 @@ import AVFoundation
 
 @objcMembers
 open class NEAudioSessionManager: NSObject {
-  static let shared = NEAudioSessionManager()
+  public static let shared = NEAudioSessionManager()
 
   private var isSpeakerActive = false {
     didSet {
@@ -24,13 +24,13 @@ open class NEAudioSessionManager: NSObject {
   }
 
   /// 设置扬声器播放
-  func switchToSpeaker() {
+  public func switchToSpeaker() {
     setAudioRoute(to: .speaker)
     isSpeakerActive = true
   }
 
   /// 设置听筒播放
-  func switchToReceiver() {
+  public func switchToReceiver() {
     setAudioRoute(to: .none)
     isSpeakerActive = false
   }

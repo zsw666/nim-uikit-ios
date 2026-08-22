@@ -4,7 +4,6 @@
 
 import Foundation
 import NEChatKit
-import NECoreIM2Kit
 import NIMSDK
 
 @objcMembers
@@ -48,6 +47,7 @@ public class ChatDeduplicationHelper: NSObject, NEIMKitClientListener {
   }
 
   // 是否已经发送过对应消息的提示
+  @nonobjc
   open func isMessageSended(messageId: String) -> Bool {
     if sendingMessageIds.contains(messageId) {
       return true
@@ -59,7 +59,13 @@ public class ChatDeduplicationHelper: NSObject, NEIMKitClientListener {
     return false
   }
 
+  @objc(isMessageSended:)
+  open func objc_isMessageSended(_ messageId: String) -> Bool {
+    isMessageSended(messageId: messageId)
+  }
+
   // 是否已经发送过黑名单消息的提示
+  @nonobjc
   open func isBlackTipSended(messageId: String) -> Bool {
     if blackListMessageIds.contains(messageId) {
       return true
@@ -71,7 +77,13 @@ public class ChatDeduplicationHelper: NSObject, NEIMKitClientListener {
     return false
   }
 
+  @objc(isBlackTipSended:)
+  open func objc_isBlackTipSended(_ messageId: String) -> Bool {
+    isBlackTipSended(messageId: messageId)
+  }
+
   // 移除黑名单消息提示去重 id
+  @nonobjc
   open func removeBlackTipSendedId(messageId: String?) {
     guard let messageId = messageId else {
       return
@@ -82,7 +94,13 @@ public class ChatDeduplicationHelper: NSObject, NEIMKitClientListener {
     }
   }
 
+  @objc(removeBlackTipSendedId:)
+  open func objc_removeBlackTipSendedId(_ messageId: String?) {
+    removeBlackTipSendedId(messageId: messageId)
+  }
+
   // 是否已经发过对应路径的音频消息，防止重复发送
+  @nonobjc
   open func isRecordAudioSended(path: String) -> Bool {
     if recordAudioMessagePaths.contains(path) {
       return true
@@ -93,7 +111,13 @@ public class ChatDeduplicationHelper: NSObject, NEIMKitClientListener {
     return false
   }
 
+  @objc(isRecordAudioSended:)
+  open func objc_isRecordAudioSended(_ path: String) -> Bool {
+    isRecordAudioSended(path: path)
+  }
+
   // 是否已经保存过此撤回消息，防止重复保存本地撤回记录
+  @nonobjc
   open func isRevokeMessageSaved(messageId: String) -> Bool {
     if revokeMessageIds.contains(messageId) {
       return true
@@ -103,5 +127,10 @@ public class ChatDeduplicationHelper: NSObject, NEIMKitClientListener {
     }
     revokeMessageIds.insert(messageId)
     return false
+  }
+
+  @objc(isRevokeMessageSaved:)
+  open func objc_isRevokeMessageSaved(_ messageId: String) -> Bool {
+    isRevokeMessageSaved(messageId: messageId)
   }
 }

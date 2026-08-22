@@ -76,6 +76,47 @@ public extension ChatRouter {
       }))
     }
 
+    Router.shared.register(PushBotSubSessionListRouter) { param in
+      let nav = param["nav"] as? UINavigationController
+      let animated = param["animated"] as? Bool ?? true
+      guard let conversationId = param["conversationId"] as? String,
+            let sessionId = param["sessionId"] as? String else {
+        return
+      }
+      let sessionName = param["sessionName"] as? String ?? (NEAIUserManager.shared.getShowName(sessionId) ?? sessionId)
+      let controller = BotSubSessionListViewController(conversationId: conversationId,
+                                                       sessionId: sessionId,
+                                                       sessionName: sessionName)
+      var count = nav?.viewControllers.count ?? 0
+      nav?.pushViewController(controller, animated: animated)
+
+      DispatchQueue.main.asyncAfter(deadline: .now() + 0.25, execute: DispatchWorkItem(block: {
+        if let remove = param["removeUserVC"] as? Bool, remove {
+          while count > 1,
+                nav?.viewControllers.last?.isKind(of: BotSubSessionListViewController.self) == true {
+            nav?.viewControllers.remove(at: count - 1)
+            count -= 1
+          }
+        }
+      }))
+    }
+
+    Router.shared.register(PushBotSubSessionChatRouter) { param in
+      let nav = param["nav"] as? UINavigationController
+      let animated = param["animated"] as? Bool ?? true
+      guard let conversationId = param["conversationId"] as? String,
+            let sessionId = param["sessionId"] as? String else {
+        return
+      }
+      let sessionName = param["sessionName"] as? String ?? (NEAIUserManager.shared.getShowName(sessionId) ?? sessionId)
+      let topic = param["topic"] as? V2NIMTopic
+      let controller = BotSubSessionChatViewController(conversationId: conversationId,
+                                                       sessionId: sessionId,
+                                                       sessionName: sessionName,
+                                                       topic: topic)
+      nav?.pushViewController(controller, animated: animated)
+    }
+
     // group
     Router.shared.register(PushTeamChatVCRouter) { param in
       let nav = param["nav"] as? UINavigationController

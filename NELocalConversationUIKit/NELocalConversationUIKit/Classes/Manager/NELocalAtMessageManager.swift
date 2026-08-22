@@ -4,7 +4,6 @@
 
 import Foundation
 import NEChatKit
-import NECoreIM2Kit
 import NIMSDK
 
 public let localAtAllKey = "ait_all"
@@ -31,6 +30,18 @@ open class NELocalAtMessageManager: NSObject, NEIMKitClientListener, NEChatListe
   private let lock = NSLock()
   private var atMessageDic = [String: LocalAtMEMessageRecord]()
   private var currentAccid = ""
+
+  private func cacheFilePath(in documentsDirectory: URL) -> URL {
+    documentsDirectory
+      .appendingPathComponent(imkitDir)
+      .appendingPathComponent("\(currentAccid)_at_message_local.plist")
+  }
+
+  private func legacyCacheFilePath(in documentsDirectory: URL) -> URL {
+    documentsDirectory
+      .appendingPathComponent(imkitDir)
+      .appendingPathComponent("\(currentAccid)_at_message.plist")
+  }
 
   override private init() {
     super.init()
@@ -236,7 +247,7 @@ open class NELocalAtMessageManager: NSObject, NEIMKitClientListener, NEChatListe
   /// at 消息记录写文件缓存
   private func writeCacheToDocument(dictionary: [String: LocalAtMEMessageRecord]) {
     if let documentsDirectory = FileManager.default.urls(for: .documentDirectory, in: .userDomainMask).first {
-      let filePath = documentsDirectory.appendingPathComponent(imkitDir + "\(currentAccid)_at_message.plist")
+      let filePath = cacheFilePath(in: documentsDirectory)
       NEALog.infoLog(className(), desc: "writeCacheToDocument path : \(filePath)")
       do {
         var jsonObject = [String: Any]()
@@ -272,35 +283,50 @@ open class NELocalAtMessageManager: NSObject, NEIMKitClientListener, NEChatListe
       }
     }
 
-    let filePath = documentDir.appendingPathComponent("\(currentAccid)_at_message_local.plist")
+    let filePath = cacheFilePath(in: documentsDirectory)
     if FileManager.default.fileExists(atPath: filePath.path) == false {
       let success = FileManager.default.createFile(atPath: filePath.path, contents: nil)
       NEALog.infoLog(className(), desc: "create file success:  \(success) path: \(filePath.path)")
-    } else {
-      do {
-        let data = try Data(contentsOf: filePath)
-        if let jsonObject = try JSONSerialization.jsonObject(with: data, options: []) as? [String: [String: Any]] {
-          var temdDic = weakSelf?.getMessageDic()
-          for (key, value) in jsonObject {
-            if let model = LocalAtMEMessageRecord.yx_model(with: value) {
-              temdDic?[key] = model
-              if let dic = jsonObject[key], let isRead = dic[#keyPath(LocalAtMEMessageRecord.isRead)] as? Bool {
-                model.isRead = isRead
-                if let atMessagesJsonObject = dic[#keyPath(LocalAtMEMessageRecord.atMessages)] {
-                  if let atMessages = NSDictionary.yx_modelDictionary(with: NSDictionary.self, json: atMessagesJsonObject) as? [String: NSNumber] {
-                    model.atMessages = atMessages
-                  }
+    }
+
+    var sourceFilePath = filePath
+    if let data = try? Data(contentsOf: filePath), data.isEmpty {
+      let legacyFilePath = legacyCacheFilePath(in: documentsDirectory)
+      if let legacyData = try? Data(contentsOf: legacyFilePath), legacyData.isEmpty == false {
+        sourceFilePath = legacyFilePath
+      }
+    }
+
+    do {
+      let data = try Data(contentsOf: sourceFilePath)
+      guard data.isEmpty == false else {
+        return
+      }
+      if let jsonObject = try JSONSerialization.jsonObject(with: data, options: []) as? [String: [String: Any]] {
+        var temdDic = weakSelf?.getMessageDic()
+        for (key, value) in jsonObject {
+          if let model = LocalAtMEMessageRecord.yx_model(with: value) {
+            temdDic?[key] = model
+            if let dic = jsonObject[key], let isRead = dic[#keyPath(LocalAtMEMessageRecord.isRead)] as? Bool {
+              model.isRead = isRead
+              if let atMessagesJsonObject = dic[#keyPath(LocalAtMEMessageRecord.atMessages)] {
+                if let atMessages = NSDictionary.yx_modelDictionary(with: NSDictionary.self, json: atMessagesJsonObject) as? [String: NSNumber] {
+                  model.atMessages = atMessages
                 }
               }
             }
           }
-          if let tem = temdDic {
-            weakSelf?.setMessageDic(tem)
-          }
         }
-      } catch {
-        NEALog.infoLog(className(), desc: "convert to message data to json object error : \(error.localizedDescription)")
+        if let tem = temdDic {
+          weakSelf?.setMessageDic(tem)
+          if sourceFilePath != filePath {
+            weakSelf?.writeCacheToDocument(dictionary: tem)
+          }
+          weakSelf?.atMessageChangeNoti()
+        }
       }
+    } catch {
+      NEALog.infoLog(className(), desc: "convert to message data to json object error : \(error.localizedDescription)")
     }
   }
 

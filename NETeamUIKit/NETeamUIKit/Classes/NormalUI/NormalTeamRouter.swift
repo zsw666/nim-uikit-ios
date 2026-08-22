@@ -3,8 +3,7 @@
 // found in the LICENSE file.
 
 import Foundation
-import NECoreIM2Kit
-import NECoreKit
+import NEChatKit
 import NIMSDK
 
 public extension TeamRouter {

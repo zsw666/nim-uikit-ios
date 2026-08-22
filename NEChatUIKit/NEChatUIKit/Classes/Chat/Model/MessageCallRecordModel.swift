@@ -3,7 +3,7 @@
 // Use of this source code is governed by a MIT license that can be
 // found in the LICENSE file.
 
-import NECommonKit
+import NEChatKit
 import NIMSDK
 import UIKit
 
@@ -26,10 +26,10 @@ open class MessageCallRecordModel: MessageContentModel {
 
       if callType == 1 {
         isAuiodRecord = true
-        image = chatCoreLoader.loadImage("audio_record")
+        image = chatUIKitLoader.loadImage("audio_record")
         bound = CGRect(x: 0, y: offset - 5, width: 24, height: 24)
       } else {
-        image = chatCoreLoader.loadImage("video_record")
+        image = chatUIKitLoader.loadImage("video_record")
         bound = CGRect(x: 0, y: offset, width: 24, height: 14)
       }
 

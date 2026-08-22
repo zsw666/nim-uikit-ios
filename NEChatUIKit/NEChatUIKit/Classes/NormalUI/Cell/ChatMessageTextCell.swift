@@ -4,7 +4,6 @@
 // found in the LICENSE file.
 
 import NEChatKit
-import NECoreKit
 import UIKit
 
 @objcMembers
@@ -77,6 +76,11 @@ open class ChatMessageTextCell: NormalChatMessageBaseCell {
     let container = UIView()
     container.translatesAutoresizingMaskIntoConstraints = false
     container.isHidden = true
+    container.isUserInteractionEnabled = true
+
+    // 将译文正文、底部译文标识行及整行空白区域统一纳入长按范围。
+    let longPress = UILongPressGestureRecognizer(target: self, action: #selector(onTranslationLongPress(_:)))
+    container.addGestureRecognizer(longPress)
 
     // 1. 分割线
     let divider = UIView()
@@ -90,15 +94,13 @@ open class ChatMessageTextCell: NormalChatMessageBaseCell {
     textLabel.font = messageTextFont // 与原文字体一致
     textLabel.textColor = .black
     textLabel.accessibilityIdentifier = "id.translationText"
-    let longPress = UILongPressGestureRecognizer(target: self, action: #selector(onTranslationLongPress(_:)))
-    textLabel.isUserInteractionEnabled = true
-    textLabel.addGestureRecognizer(longPress)
+    textLabel.isUserInteractionEnabled = false
 
     // 3. 底部「图标 + 译文」footer
     let footerView = UIView()
     footerView.translatesAutoresizingMaskIntoConstraints = false
 
-    let iconView = UIImageView(image: chatCoreLoader.loadImage("chat_translation"))
+    let iconView = UIImageView(image: chatUIKitLoader.loadImage("chat_translation"))
     iconView.translatesAutoresizingMaskIntoConstraints = false
     iconView.contentMode = .scaleAspectFit
 
@@ -238,7 +240,8 @@ open class ChatMessageTextCell: NormalChatMessageBaseCell {
     let heightZero = isSend ? translationAreaRightHeightZero : translationAreaLeftHeightZero
     let hasTranslation = model.translationInfo != nil &&
       !(model.translationInfo?.translatedText.isEmpty ?? true) &&
-      model.translationVisible
+      model.translationVisible &&
+      !model.inMultiForward
 
     if hasTranslation {
       textLabel.text = model.translationInfo?.translatedText
@@ -300,6 +303,11 @@ open class ChatMessageTextCell: NormalChatMessageBaseCell {
   }
 
   override open func longPress(longPress: UILongPressGestureRecognizer) {
+    let contentLabel = contentLabelLeft.isHidden ? contentLabelRight : contentLabelLeft
+    let location = longPress.location(in: contentLabel)
+    guard contentLabel.bounds.contains(location) else {
+      return
+    }
     isLongPress = true
     selectAllRange()
   }

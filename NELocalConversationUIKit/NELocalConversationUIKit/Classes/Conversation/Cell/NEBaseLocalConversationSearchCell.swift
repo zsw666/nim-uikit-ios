@@ -20,12 +20,10 @@ open class NEBaseLocalConversationSearchCell: TextBaseCell {
       if let _ = searchModel {
         if let userFriend = searchModel?.userInfo {
           let url = userFriend.user?.avatar
-          let name = userFriend.shortName() ?? ""
           let accountId = userFriend.user?.accountId ?? ""
+          let name = userFriend.user?.name ?? accountId
           headImageView.configHeadData(headUrl: url, name: name, uid: accountId)
-
-          titleLabel.text = userFriend.showName()
-          subTitleLabel.text = userFriend.user?.accountId
+          updateFriendDisplay(userFriend)
         }
 
         if let teamInfo = searchModel?.team {
@@ -43,36 +41,45 @@ open class NEBaseLocalConversationSearchCell: TextBaseCell {
 
   public var searchText: String = "" {
     didSet {
-      if let titleText = titleLabel.text {
-        let attributedStr = NSMutableAttributedString(string: titleText)
-        // range 表示从索引几开始取几个字符
-        let range = attributedStr.mutableString.range(of: searchText)
-        attributedStr.addAttribute(
-          .foregroundColor,
-          value: getRangeTextColor(),
-          range: range
-        )
-        titleLabel.attributedText = attributedStr
-        titleLabelCenterYAnchor?.isActive = true
-        titleLabelTopAnchor?.isActive = false
-        subTitleLabel.isHidden = true
+      if let userFriend = searchModel?.userInfo {
+        updateFriendDisplay(userFriend)
       }
-
-      if let subTitleText = subTitleLabel.text {
-        let attributedStr = NSMutableAttributedString(string: subTitleText)
-        // range 表示从索引几开始取几个字符
-        let range = attributedStr.mutableString.range(of: searchText)
-        attributedStr.addAttribute(
-          .foregroundColor,
-          value: getRangeTextColor(),
-          range: range
-        )
-        subTitleLabel.attributedText = attributedStr
-        subTitleLabel.isHidden = false
-        titleLabelTopAnchor?.isActive = true
-        titleLabelCenterYAnchor?.isActive = false
-      }
+      applyHighlight(to: titleLabel)
+      applyHighlight(to: subTitleLabel)
+      let hasSubtitle = !(subTitleLabel.text ?? "").isEmpty
+      subTitleLabel.isHidden = !hasSubtitle
+      titleLabelTopAnchor?.isActive = hasSubtitle
+      titleLabelCenterYAnchor?.isActive = !hasSubtitle
     }
+  }
+
+  private func updateFriendDisplay(_ userFriend: NEUserWithFriend) {
+    let displayNames = [
+      userFriend.friend?.alias ?? "",
+      userFriend.user?.name ?? "",
+      userFriend.user?.accountId ?? "",
+    ].filter { !$0.isEmpty }
+    let title = displayNames.first
+    let matchedName = displayNames.first { $0.contains(searchText) }
+    let subtitle = matchedName == title ? displayNames.dropFirst().first : matchedName
+    titleLabel.text = title
+    subTitleLabel.text = subtitle == title ? nil : subtitle
+    subTitleLabel.isHidden = subTitleLabel.text?.isEmpty != false
+    titleLabelTopAnchor?.isActive = !subTitleLabel.isHidden
+    titleLabelCenterYAnchor?.isActive = subTitleLabel.isHidden
+  }
+
+  private func applyHighlight(to label: UILabel) {
+    guard let text = label.text else {
+      label.attributedText = nil
+      return
+    }
+    let attributedStr = NSMutableAttributedString(string: text)
+    let range = attributedStr.mutableString.range(of: searchText)
+    if range.location != NSNotFound {
+      attributedStr.addAttribute(.foregroundColor, value: getRangeTextColor(), range: range)
+    }
+    label.attributedText = attributedStr
   }
 
   func getRangeTextColor() -> UIColor {

@@ -3,9 +3,8 @@
 // Use of this source code is governed by a MIT license that can be
 // found in the LICENSE file.
 
-import NECommonKit
-import NECommonUIKit
-import NECoreIM2Kit
+import NEChatKit
+import NEBaseUIKit
 import UIKit
 
 @objcMembers
@@ -23,6 +22,8 @@ open class NEAIWordSearchViewController: UIViewController, NEAIWordSearchViewMod
   var contentTableViewTopAnchor: NSLayoutConstraint?
 
   var viewHeight: CGFloat = 0
+  private let compactViewHeight: CGFloat = 406
+  private let expandedViewHeight: CGFloat = 700
 
   override open var title: String? {
     get {
@@ -55,7 +56,7 @@ open class NEAIWordSearchViewController: UIViewController, NEAIWordSearchViewMod
 
   deinit {
     if let tap = tap {
-      view.superview?.removeGestureRecognizer(tap)
+      tap.view?.removeGestureRecognizer(tap)
     }
   }
 
@@ -66,13 +67,23 @@ open class NEAIWordSearchViewController: UIViewController, NEAIWordSearchViewMod
     view.layer.borderColor = UIColor.lightGray.cgColor
 
     if viewHeight == 0 {
-      viewHeight = 406
-      view.frame = CGRect(x: 0, y: NEConstant.screenHeight - viewHeight, width: NEConstant.screenWidth, height: viewHeight)
+      viewHeight = compactViewHeight
+      if !usesNativeSheetPresentation {
+        view.frame = CGRect(x: 0, y: NEConstant.screenHeight - viewHeight, width: NEConstant.screenWidth, height: viewHeight)
+      }
     }
+  }
 
-    tap = UITapGestureRecognizer(target: self, action: #selector(tapAction))
-    tap?.cancelsTouchesInView = false
-    view.superview?.addGestureRecognizer(tap!)
+  override open func viewDidAppear(_ animated: Bool) {
+    super.viewDidAppear(animated)
+    guard tap == nil,
+          let containerView = presentationController?.containerView else {
+      return
+    }
+    let backgroundTap = UITapGestureRecognizer(target: self, action: #selector(tapAction))
+    backgroundTap.cancelsTouchesInView = false
+    containerView.addGestureRecognizer(backgroundTap)
+    tap = backgroundTap
   }
 
 //  override open func viewWillAppear(_ animated: Bool) {
@@ -151,6 +162,7 @@ open class NEAIWordSearchViewController: UIViewController, NEAIWordSearchViewMod
 
   /// UI 布局
   open func setupUI() {
+    configureSheetPresentation()
     title = localizable("ai_word_searching")
     view.backgroundColor = .white
 
@@ -189,10 +201,8 @@ open class NEAIWordSearchViewController: UIViewController, NEAIWordSearchViewMod
   /// 取消按钮点击事件
   func cancelButtonAction() {
     if let tap = tap {
-      view.superview?.removeGestureRecognizer(tap)
+      tap.view?.removeGestureRecognizer(tap)
     }
-    view.removeFromSuperview()
-    removeFromParent()
     dismiss(animated: true, completion: nil)
   }
 
@@ -200,17 +210,21 @@ open class NEAIWordSearchViewController: UIViewController, NEAIWordSearchViewMod
   /// - Parameter tap: 单击手势
   func tapAction(_ tap: UITapGestureRecognizer) {
     // 判断手势位置位于背景区域
-    if tap.location(in: view).y < 0 {
+    if !view.bounds.contains(tap.location(in: view)) {
       cancelButtonAction()
     }
   }
 
   /// 补充信息按钮点击事件
   func moreButtonAction() {
-    viewHeight = 700
-    UIView.animate(withDuration: 0.25) {
-      self.view.frame = CGRect(x: 0, y: NEConstant.screenHeight - self.viewHeight, width: NEConstant.screenWidth, height: self.viewHeight)
-      self.view.layoutIfNeeded()
+    viewHeight = expandedViewHeight
+    if !updateNativeSheetHeight(expandedViewHeight,
+                                identifier: "com.netease.imuikit.aiSearch.expanded",
+                                animated: true) {
+      UIView.animate(withDuration: 0.25) {
+        self.view.frame = CGRect(x: 0, y: NEConstant.screenHeight - self.viewHeight, width: NEConstant.screenWidth, height: self.viewHeight)
+        self.view.layoutIfNeeded()
+      }
     }
 
     // 移除补充信息按钮，添加输入框
@@ -224,6 +238,82 @@ open class NEAIWordSearchViewController: UIViewController, NEAIWordSearchViewMod
     ])
 
     contentTableViewTopAnchor?.constant = 16 + 120
+  }
+
+  private var usesNativeSheetPresentation: Bool {
+    if #available(iOS 15.0, *) {
+      return UIDevice.current.userInterfaceIdiom == .phone
+    }
+    return false
+  }
+
+  private func configureSheetPresentation() {
+    guard UIDevice.current.userInterfaceIdiom == .phone else {
+      return
+    }
+    if #available(iOS 15.0, *) {
+      modalPresentationStyle = .pageSheet
+      _ = updateNativeSheetHeight(compactViewHeight,
+                                  identifier: "com.netease.imuikit.aiSearch.compact",
+                                  animated: false)
+    } else {
+      // Prevent iOS 13-14 from adapting `.automatic` to a page sheet while
+      // the legacy layout still positions the view with an explicit frame.
+      modalPresentationStyle = .overFullScreen
+    }
+  }
+
+  @discardableResult
+  private func updateNativeSheetHeight(_ height: CGFloat,
+                                       identifier: String,
+                                       animated: Bool) -> Bool {
+    guard UIDevice.current.userInterfaceIdiom == .phone else {
+      return false
+    }
+
+    if #available(iOS 16.0, *), let sheet = sheetPresentationController {
+      let detentIdentifier = UISheetPresentationController.Detent.Identifier(identifier)
+      let update = {
+        sheet.detents = [
+          .custom(identifier: detentIdentifier) { context in
+            min(height, context.maximumDetentValue)
+          },
+        ]
+        sheet.selectedDetentIdentifier = detentIdentifier
+        sheet.prefersGrabberVisible = false
+        sheet.prefersScrollingExpandsWhenScrolledToEdge = false
+        sheet.preferredCornerRadius = 8
+      }
+
+      if animated {
+        sheet.animateChanges(update)
+      } else {
+        update()
+      }
+      return true
+    }
+
+    if #available(iOS 15.0, *), let sheet = sheetPresentationController {
+      let isExpanded = height == expandedViewHeight
+      let detent: UISheetPresentationController.Detent = isExpanded ? .large() : .medium()
+      let detentIdentifier: UISheetPresentationController.Detent.Identifier = isExpanded ? .large : .medium
+      let update = {
+        sheet.detents = [detent]
+        sheet.selectedDetentIdentifier = detentIdentifier
+        sheet.prefersGrabberVisible = false
+        sheet.prefersScrollingExpandsWhenScrolledToEdge = false
+        sheet.preferredCornerRadius = 8
+      }
+
+      if animated {
+        sheet.animateChanges(update)
+      } else {
+        update()
+      }
+      return true
+    }
+
+    return false
   }
 
   /// 确认按钮点击事件

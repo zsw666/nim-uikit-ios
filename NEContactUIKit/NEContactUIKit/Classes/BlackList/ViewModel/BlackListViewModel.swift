@@ -4,8 +4,6 @@
 
 import Foundation
 import NEChatKit
-import NECoreIM2Kit
-import NECoreKit
 
 @objc
 public protocol BlackListViewModelDelegate: NSObjectProtocol {
@@ -31,13 +29,23 @@ open class BlackListViewModel: NSObject {
   /// 获取黑名单列表
   open func getBlackList() {
     NEALog.infoLog(ModuleName + " " + className(), desc: #function)
-    if let blockList = NEFriendUserCache.shared.getBlocklist() {
-      NEFriendUserCache.shared.loadShowName(blockList) { users in
-        if let users = users {
-          self.blockList = users
-        }
-        self.delegate?.tableViewReload()
+    guard let blockList = NEFriendUserCache.shared.getBlocklist() else {
+      self.blockList.removeAll()
+      delegate?.tableViewReload()
+      return
+    }
+
+    if blockList.isEmpty {
+      self.blockList.removeAll()
+      delegate?.tableViewReload()
+      return
+    }
+
+    NEFriendUserCache.shared.loadShowName(blockList) { users in
+      if let users = users {
+        self.blockList = users
       }
+      self.delegate?.tableViewReload()
     }
   }
 

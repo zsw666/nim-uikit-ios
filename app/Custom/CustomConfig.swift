@@ -407,30 +407,65 @@ public class CustomConfig {
   /// 加载自定义图片选择器
   func loadPhotoBrowser() {
     ChatUIConfig.shared.chatInputPhotoClick = { chatViewController, mediaType, limit, selectImageBlock in
+      let configuration = ZLPhotoConfiguration.default()
+      configuration.canSelectAsset = nil
+      configuration.didSelectAsset = nil
+      configuration.didDeselectAsset = nil
+
       switch mediaType {
       case .all:
         // 聊天页面选择图片/视频发送
         // 图片最多选取 chatImageCountLimit 张
         // 视频最多选取 chatVideoCountLimit 张
-        ZLPhotoConfiguration.default().allowSelectLivePhoto = true
-        ZLPhotoConfiguration.default().allowTakePhotoInLibrary = false
-        ZLPhotoConfiguration.default().allowMixSelect = false
-        ZLPhotoConfiguration.default().maxSelectCount = limit
-        ZLPhotoConfiguration.default().maxSelectVideoDataSize = ChatUIConfig.shared.fileSizeLimit * 1024
+        var selectedVideoIds = Set<String>()
+        configuration.allowSelectImage = true
+        configuration.allowSelectVideo = true
+        configuration.allowSelectLivePhoto = true
+        configuration.allowTakePhotoInLibrary = false
+        configuration.allowMixSelect = false
+        configuration.editAfterSelectThumbnailImage = false
+        configuration.showSelectBtnWhenSingleSelect = true
+        configuration.maxSelectCount = limit
+        configuration.maxSelectVideoDataSize = ChatUIConfig.shared.fileSizeLimit * 1024
+        configuration.canSelectAsset = { asset in
+          guard !selectedVideoIds.isEmpty else {
+            return true
+          }
+          guard asset.mediaType == .video else {
+            return false
+          }
+          return selectedVideoIds.contains(asset.localIdentifier) ||
+            selectedVideoIds.count < chatVideoCountLimit
+        }
+        configuration.didSelectAsset = { [weak configuration] asset in
+          if asset.mediaType == .video {
+            selectedVideoIds.insert(asset.localIdentifier)
+            configuration?.maxSelectCount = chatVideoCountLimit
+          }
+        }
+        configuration.didDeselectAsset = { [weak configuration] asset in
+          if asset.mediaType == .video {
+            selectedVideoIds.remove(asset.localIdentifier)
+            configuration?.maxSelectCount = limit
+          }
+        }
       case .image:
         // 选取图片上传头像
         // 最多选取 avatarImageCountLimit 张
-        ZLPhotoConfiguration.default().allowSelectImage = true
-        ZLPhotoConfiguration.default().allowSelectVideo = false
-        ZLPhotoConfiguration.default().maxSelectCount = limit
-        ZLPhotoConfiguration.default().editAfterSelectThumbnailImage = true
-        ZLPhotoConfiguration.default().allowSelectLivePhoto = true
-        ZLPhotoConfiguration.default().allowTakePhotoInLibrary = false
+        configuration.allowSelectImage = true
+        configuration.allowSelectVideo = false
+        configuration.showSelectBtnWhenSingleSelect = false
+        configuration.maxSelectCount = limit
+        configuration.editAfterSelectThumbnailImage = true
+        configuration.allowSelectLivePhoto = true
+        configuration.allowTakePhotoInLibrary = false
       default:
-        ZLPhotoConfiguration.default().allowSelectImage = false
-        ZLPhotoConfiguration.default().allowSelectVideo = true
-        ZLPhotoConfiguration.default().maxSelectCount = limit
-        ZLPhotoConfiguration.default().allowTakePhotoInLibrary = false
+        configuration.allowSelectImage = false
+        configuration.allowSelectVideo = true
+        configuration.editAfterSelectThumbnailImage = false
+        configuration.showSelectBtnWhenSingleSelect = false
+        configuration.maxSelectCount = limit
+        configuration.allowTakePhotoInLibrary = false
       }
 
       let picker = ZLPhotoPicker()

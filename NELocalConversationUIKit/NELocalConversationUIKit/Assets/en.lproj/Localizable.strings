@@ -35,6 +35,7 @@
 "message_recalled"="Message recalled";
 
 "you_were_mentioned"="[You were mentioned]";
+"bot_sub_session_prefix"="[Sub-session] ";
 
 // error toast
 "leave_team_desc"="You have been removed from the group chat or the group chat has been dissolved.";
@@ -45,4 +46,3 @@
 "scan_qr_no_camera_permission"="Please enable camera access in Settings";
 "scan_qr_fail"="Scan failed, please try again";
 "qr_code_expired"="QR code has expired";
-

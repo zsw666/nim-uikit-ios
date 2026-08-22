@@ -197,7 +197,7 @@ public extension OperationItem {
   static func hideTranslationItem() -> OperationItem {
     let item = OperationItem()
     item.text = chatLocalizable("chat_translate_hide")
-    item.imageName = "chat_translation"
+    item.imageName = "chat_translation_hide"
     item.type = .hideTranslation
     return item
   }

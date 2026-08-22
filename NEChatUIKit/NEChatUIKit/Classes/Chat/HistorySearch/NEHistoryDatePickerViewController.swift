@@ -3,7 +3,6 @@
 // found in the LICENSE file.
 
 import NEChatKit
-import NECommonKit
 import UIKit
 
 // MARK: - 日期选择结果回调协议

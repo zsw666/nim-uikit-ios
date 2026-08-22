@@ -3,8 +3,7 @@
 // found in the LICENSE file.
 
 import NEChatKit
-import NECommonUIKit
-import NECoreKit
+import NEBaseUIKit
 import NIMSDK
 import UIKit
 
@@ -440,11 +439,13 @@ open class NEBaseAIRobotDetailController: NEContactBaseViewController, UITableVi
     guard let conversationId = V2NIMConversationIdUtil.p2pConversationId(accid) else { return }
     guard let nav = navigationController else { return }
 
-    // 跳转到聊天页，同时将当前 Detail 页从导航栈中移除
-    // 这样用户在聊天页点击返回时，会直接回到会话列表，而不是机器人详情页
-    Router.shared.use(PushP2pChatVCRouter,
+    // 跳转到机器人子会话列表，同时将当前 Detail 页从导航栈中移除
+    // 这样用户在子会话列表点击返回时，会直接回到会话列表，而不是机器人详情页
+    Router.shared.use(PushBotSubSessionListRouter,
                       parameters: ["nav": nav,
                                    "conversationId": conversationId as Any,
+                                   "sessionId": accid,
+                                   "sessionName": viewModel.bot?.name ?? accid,
                                    "animated": true],
                       closure: nil)
     // push 完成后，从导航栈中移除自身（Detail 页），保留栈底的会话列表
